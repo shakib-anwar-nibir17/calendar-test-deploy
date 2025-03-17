@@ -21,14 +21,6 @@ export function UpcomingClasses() {
               <div className="bg-primary/10 text-primary p-3 rounded-md">
                 <Clock className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="font-medium">Introduction to React</h3>
-                <p className="text-sm text-muted-foreground">Tomorrow at 10:00 AM</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="bg-blue-500/10 text-blue-500 text-xs px-2 py-1 rounded">Frontend</div>
-                  <div className="bg-green-500/10 text-green-500 text-xs px-2 py-1 rounded">Beginner</div>
-                </div>
-              </div>
             </div>
           </div>
         ) : (
