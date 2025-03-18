@@ -15,15 +15,7 @@ export function UpcomingClasses() {
         <CardDescription>Your upcoming scheduled classes</CardDescription>
       </CardHeader>
       <CardContent>
-        {hasUpcomingClasses ? (
-          <div className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4 flex items-start gap-4">
-              <div className="bg-primary/10 text-primary p-3 rounded-md">
-                <Clock className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
-        ) : (
+        {hasUpcomingClasses ?  : (
           <div className="py-8 text-center">
             <p className="text-muted-foreground">No upcoming classes</p>
             <button className="mt-4 text-primary text-sm hover:underline">Browse available classes</button>
