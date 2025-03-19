@@ -1,24 +1,24 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const calendarEventApi = createApi({
-  reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
-  tagTypes: ["Platforms", "Events"],
+  reducerPath: "calendarEventApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api" }), // ✅ Matches Next.js API routes
+  tagTypes: ["Events"], // ✅ Only keeps relevant tag
 
   endpoints: (builder) => ({
     getEvents: builder.query({
-      query: () => "/events",
+      query: () => "/calendar-events", // ✅ Matches API structure
       providesTags: ["Events"],
     }),
 
     getEventById: builder.query({
-      query: (id) => `/events/${id}`,
+      query: (id) => `/calendar-events/${id}`,
       providesTags: (result, error, id) => [{ type: "Events", id }],
     }),
 
     createEvent: builder.mutation({
       query: (newEvent) => ({
-        url: "/events",
+        url: "/calendar-events",
         method: "POST",
         body: newEvent,
       }),
@@ -27,7 +27,7 @@ export const calendarEventApi = createApi({
 
     updateEvent: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `/events/${id}`,
+        url: `/calendar-events/${id}`,
         method: "PUT",
         body: updates,
       }),
@@ -36,10 +36,10 @@ export const calendarEventApi = createApi({
 
     deleteEvent: builder.mutation({
       query: (id) => ({
-        url: `/events/${id}`,
+        url: `/calendar-events/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Events"],
+      invalidatesTags: (result, error, id) => [{ type: "Events", id }],
     }),
   }),
 });
