@@ -6,8 +6,8 @@ import {
   GraduationCap,
   CheckCircle,
   Clock,
-  Users,
   Calendar,
+  Coins,
 } from "lucide-react";
 
 import {
@@ -23,60 +23,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { extractPlatformStatistics } from "@/utils/platform-statistics";
+import { useAppSelector } from "@/store/hooks";
+import { getFromLocalStorage } from "@/utils/local-storage";
+import { CalendarEvent } from "@/store/states/calender";
 
 // Mock data for platforms
-const platformsData = [
-  {
-    id: "platform-1",
-    name: "Learning Platform Alpha",
-    classes: 12,
-    completed: 5,
-    upcoming: 3,
-    progress: 42,
-    students: 156,
-    nextClass: "2023-05-15T10:00:00",
-  },
-  {
-    id: "platform-2",
-    name: "Education Hub Beta",
-    classes: 8,
-    completed: 2,
-    upcoming: 4,
-    progress: 25,
-    students: 89,
-    nextClass: "2023-05-12T14:30:00",
-  },
-  {
-    id: "platform-3",
-    name: "Training Center Gamma",
-    classes: 15,
-    completed: 8,
-    upcoming: 2,
-    progress: 53,
-    students: 210,
-    nextClass: "2023-05-11T09:15:00",
-  },
-];
 
 export default function StatsCards() {
-  const [selectedView, setSelectedView] = useState("platform");
+  const platforms = useAppSelector((state) => state.platforms.platforms);
+  const events = getFromLocalStorage<CalendarEvent[]>("calendarEvents") || [];
+  const stats = extractPlatformStatistics(events, platforms);
 
-  // Calculate totals
-  const totalPlatforms = platformsData.length;
-  const totalClasses = platformsData.reduce(
-    (sum, platform) => sum + platform.classes,
-    0
-  );
-  const totalCompleted = platformsData.reduce(
-    (sum, platform) => sum + platform.completed,
-    0
-  );
-  const totalUpcoming = platformsData.reduce(
-    (sum, platform) => sum + platform.upcoming,
-    0
-  );
+  console.log(stats);
+
+  const [selectedView, setSelectedView] = useState("platform");
 
   return (
     <Card className="w-full mx-auto">
@@ -108,7 +71,9 @@ export default function StatsCards() {
                   Total Platforms
                 </span>
               </div>
-              <span className="text-3xl font-bold">{totalPlatforms}</span>
+              <span className="text-3xl font-bold">
+                {stats.platforms.length}
+              </span>
             </div>
 
             <div className="flex flex-col p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
@@ -120,7 +85,9 @@ export default function StatsCards() {
                   Total Classes
                 </span>
               </div>
-              <span className="text-3xl font-bold">{totalClasses}</span>
+              <span className="text-3xl font-bold">
+                {stats.total.totalClasses}
+              </span>
             </div>
 
             <div className="flex flex-col p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
@@ -130,7 +97,9 @@ export default function StatsCards() {
                 </div>
                 <span className="text-sm text-muted-foreground">Completed</span>
               </div>
-              <span className="text-3xl font-bold">{totalCompleted}</span>
+              <span className="text-3xl font-bold">
+                {stats.total.completedClasses}
+              </span>
             </div>
 
             <div className="flex flex-col p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
@@ -140,13 +109,27 @@ export default function StatsCards() {
                 </div>
                 <span className="text-sm text-muted-foreground">Upcoming</span>
               </div>
-              <span className="text-3xl font-bold">{totalUpcoming}</span>
+              <span className="text-3xl font-bold">
+                {stats.total.upcomingClasses}
+              </span>
+            </div>
+
+            <div className="flex flex-col p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                  <Coins className="w-4 h-4 text-yellow-600 dark:text-yellow-600" />
+                </div>
+                <span className="text-sm text-muted-foreground">Earning</span>
+              </div>
+              <span className="text-3xl font-bold">
+                {stats.total.moneyEarned}
+              </span>
             </div>
           </div>
         ) : (
           <Accordion type="single" collapsible className="w-full">
-            {platformsData.map((platform) => (
-              <AccordionItem key={platform.id} value={platform.id}>
+            {stats.platforms.map((platform) => (
+              <AccordionItem key={platform.name} value={platform.name}>
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
@@ -164,7 +147,7 @@ export default function StatsCards() {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="pl-11 pr-4 pb-2">
-                    <Progress value={platform.progress} className="h-2 mb-4" />
+                    {/* <Progress value={platform.progress} className="h-2 mb-4" /> */}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div className="flex items-center gap-2">
@@ -174,7 +157,7 @@ export default function StatsCards() {
                             Classes
                           </span>
                           <span className="font-medium">
-                            {platform.classes}
+                            {platform.totalClasses}
                           </span>
                         </div>
                       </div>
@@ -186,7 +169,7 @@ export default function StatsCards() {
                             Completed
                           </span>
                           <span className="font-medium">
-                            {platform.completed}
+                            {platform.completedClasses}
                           </span>
                         </div>
                       </div>
@@ -198,7 +181,7 @@ export default function StatsCards() {
                             Upcoming
                           </span>
                           <span className="font-medium">
-                            {platform.upcoming}
+                            {platform.upcomingClasses}
                           </span>
                         </div>
                       </div>
@@ -224,15 +207,17 @@ export default function StatsCards() {
                             Next Class
                           </span>
                           <span className="font-medium">
-                            {new Date(platform.nextClass).toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
+                            {(platform.nextClass &&
+                              new Date(platform.nextClass).toLocaleDateString(
+                                undefined,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )) ||
+                              "No next class scheduled"}
                           </span>
                         </div>
                       </div>
