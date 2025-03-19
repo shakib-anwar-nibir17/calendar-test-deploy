@@ -257,46 +257,6 @@ export default function EventModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(endDate, "PPP")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarPicker
-                    mode="single"
-                    selected={endDate}
-                    onSelect={handleEndDateChange}
-                    initialFocus
-                    disabled={!isEditable}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="endTime">End Time</Label>
-              <div className="flex w-full items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={endTime}
-                  onChange={handleEndTimeChange}
-                  disabled={!isEditable}
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="grid gap-2">
             <HourMinuteInput
               defaultTotal={eventData.hoursEngaged}
