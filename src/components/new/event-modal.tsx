@@ -174,6 +174,8 @@ export default function EventModal({
     onClose();
   };
 
+  console.log(totalHoursEngaged);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[525px]">
@@ -260,9 +262,7 @@ export default function EventModal({
           <div className="grid gap-2">
             <HourMinuteInput
               defaultTotal={eventData.hoursEngaged}
-              onChange={(hours, minutes, totalHours) =>
-                setTotalHoursEngaged(totalHours)
-              }
+              onChange={(hours) => setTotalHoursEngaged(hours)}
               disabled={!isEditable}
             />
           </div>
