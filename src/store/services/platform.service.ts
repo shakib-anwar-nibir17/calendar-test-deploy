@@ -1,34 +1,45 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const platformApi = createApi({
-  reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // ✅ Works for both Pages & App Router
+  reducerPath: "platformApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/platforms" }),
+  tagTypes: ["Platforms"],
+
   endpoints: (builder) => ({
     getPlatforms: builder.query({
-      query: () => "platforms", // Matches /api/platforms
+      query: () => "",
+      providesTags: ["Platforms"],
     }),
+
     getPlatformById: builder.query({
-      query: (id) => `platforms/${id}`, // Matches /api/platforms/[id]
+      query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: "Platforms", id }],
     }),
+
     createPlatform: builder.mutation({
-      query: (platform) => ({
-        url: "platforms",
+      query: (newPlatform) => ({
+        url: "",
         method: "POST",
-        body: platform,
+        body: newPlatform,
       }),
+      invalidatesTags: ["Platforms"],
     }),
+
     updatePlatform: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `platforms/${id}`,
+        url: `/${id}`,
         method: "PUT",
         body: updates,
       }),
+      invalidatesTags: (result, error, { id }) => [{ type: "Platforms", id }],
     }),
+
     deletePlatform: builder.mutation({
       query: (id) => ({
-        url: `platforms/${id}`,
+        url: `/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Platforms"],
     }),
   }),
 });

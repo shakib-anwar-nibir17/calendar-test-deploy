@@ -41,6 +41,8 @@ const platformSchema = new Schema<PlatformDocument>({
   events: [{ type: Schema.Types.ObjectId, ref: "CalendarEvent" }],
 });
 
-const Platform = model<PlatformDocument>("Platform", platformSchema);
+const Platform =
+  mongoose.models.Platform ||
+  model<PlatformDocument>("Platform", platformSchema);
 
 export default Platform;

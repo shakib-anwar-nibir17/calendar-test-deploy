@@ -1,40 +1,86 @@
+import { NextResponse } from "next/server";
 import { connectToMongoDB } from "@/lib/mongodb";
 import Platform from "@/models/platform.model";
-import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
+// Get a platform by ID
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   await connectToMongoDB();
-  const { id } = req.query;
 
-  if (req.method === "GET") {
-    try {
-      const platform = await Platform.findById(id).populate("events");
-      if (!platform)
-        return res.status(404).json({ message: "Platform not found" });
-      res.status(200).json(platform);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching platform", error });
+  try {
+    const platform = await Platform.findById(params.id).populate("events");
+
+    if (!platform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 404 }
+      );
     }
-  } else if (req.method === "PUT") {
-    try {
-      const updatedPlatform = await Platform.findByIdAndUpdate(id, req.body, {
-        new: true,
-      });
-      res.status(200).json(updatedPlatform);
-    } catch (error) {
-      res.status(400).json({ message: "Error updating platform", error });
+
+    return NextResponse.json(platform, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal Server Error", details: error },
+      { status: 500 }
+    );
+  }
+}
+
+// Update a platform
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  await connectToMongoDB();
+
+  try {
+    const updates = await req.json();
+    const updatedPlatform = await Platform.findByIdAndUpdate(
+      params.id,
+      updates,
+      { new: true }
+    );
+
+    if (!updatedPlatform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 404 }
+      );
     }
-  } else if (req.method === "DELETE") {
-    try {
-      await Platform.findByIdAndDelete(id);
-      res.status(200).json({ message: "Platform deleted" });
-    } catch (error) {
-      res.status(500).json({ message: "Error deleting platform", error });
+
+    return NextResponse.json(updatedPlatform, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal Server Error", details: error },
+      { status: 500 }
+    );
+  }
+}
+
+// Delete a platform
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  await connectToMongoDB();
+
+  try {
+    const deletedPlatform = await Platform.findByIdAndDelete(params.id);
+
+    if (!deletedPlatform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 404 }
+      );
     }
-  } else {
-    res.status(405).json({ message: "Method not allowed" });
+
+    return NextResponse.json({ message: "Platform deleted" }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal Server Error", details: error },
+      { status: 500 }
+    );
   }
 }
