@@ -1,5 +1,5 @@
 import { Schema, Document, model } from "mongoose";
-import { CalendarEvent } from "./calendarEvent.model";
+import { CalendarEvent } from "./calendar-event.model";
 
 export interface PlatformDocument extends Document {
   name: string;
