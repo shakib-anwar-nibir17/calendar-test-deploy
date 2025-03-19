@@ -15,6 +15,7 @@ export type Platform = {
   paymentType: paymentType;
   hourlyRate: number;
   nextPayData: string;
+  day?: DayValue;
 };
 
 export type PlatformsState = {

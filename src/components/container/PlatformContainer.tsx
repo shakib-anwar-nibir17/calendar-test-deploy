@@ -10,9 +10,12 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { RootState } from "@/store";
 import { updatePlatform } from "@/store/slices/platform.slice";
 import { Platform } from "@/store/states/platforms";
+import { UpdatePlatformModal } from "../platform/update-platform-modal";
 
 const PlatformContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModal, setIsEditModal] = useState(false);
+  const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
   const dispatch = useAppDispatch();
 
   const platforms = useAppSelector(
@@ -20,7 +23,8 @@ const PlatformContainer = () => {
   );
 
   const handleEditPlatform = (platform: Platform) => {
-    dispatch(updatePlatform(platform));
+    setEditPlatform(platform);
+    setIsEditModal(!isEditModal);
   };
 
   return (
@@ -47,6 +51,11 @@ const PlatformContainer = () => {
       <AddPlatformModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+      <UpdatePlatformModal
+        isOpen={isEditModal}
+        onClose={() => setIsEditModal(false)}
+        platform={editPlatform}
       />
     </div>
   );

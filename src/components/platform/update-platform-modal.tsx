@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,45 +30,52 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Platform } from "@/store/states/platforms";
-import { addPlatform } from "@/store/slices/platform.slice";
+import { DayValue, Platform } from "@/store/states/platforms";
 import { useAppDispatch } from "@/store/hooks";
+import { daysOfWeek } from "@/utils/platform-utils";
+import { updatePlatform } from "@/store/slices/platform.slice";
 
 interface AddPlatformModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
+  readonly platform: Platform | null;
 }
 
-export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
+export function UpdatePlatformModal({
+  isOpen,
+  onClose,
+  platform,
+}: AddPlatformModalProps) {
   const [name, setName] = useState("");
   const [paymentType, setPaymentType] =
-    useState<Platform["paymentType"]>("Weekly");
+    useState<Platform["paymentType"]>("Upfront");
+  const [day, setDay] = useState<DayValue>("monday");
   const [hourlyRate, setHourlyRate] = useState(0);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    setName(platform?.name ?? "");
+    setPaymentType(platform?.paymentType ?? "Upfront");
+    setHourlyRate(platform?.hourlyRate ?? 0);
+    setDate(new Date(platform?.nextPayData ?? ""));
+    setDay(platform?.day ?? "monday");
+  }, [platform]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const nextPayData = date ? date.toISOString() : "";
-
-    dispatch(
-      addPlatform({
-        name: name,
-        paymentType: paymentType,
-        hourlyRate: hourlyRate,
-        nextPayData: nextPayData,
-      })
-    );
-
-    // Reset form
-    setName("");
-    setPaymentType("Weekly");
-    setHourlyRate(0);
-    setDate(undefined);
-
-    onClose();
+    const updatableData = {
+      id: platform?.id ?? "",
+      name: name,
+      paymentType: paymentType,
+      hourlyRate: hourlyRate,
+      nextPayData: date?.toISOString() ?? "",
+      day: day,
+    };
+    dispatch(updatePlatform(updatableData));
   };
+
+  console.log(platform);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -96,9 +103,9 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
               <Label htmlFor="payment-type">Payment Type</Label>
               <Select
                 value={paymentType}
-                onValueChange={(
-                  value: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront"
-                ) => setPaymentType(value)}
+                onValueChange={(value: Platform["paymentType"]) =>
+                  setPaymentType(value)
+                }
                 required
               >
                 <SelectTrigger id="payment-type">
@@ -125,33 +132,62 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label>Next Pay Date (Optional)</Label>
-              <div className="flex flex-col gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+            {paymentType === "Bi-Weekly" ||
+              (paymentType === "Monthly" && (
+                <div className="grid gap-2">
+                  <Label>Next Pay Date</Label>
+                  <div className="flex flex-col gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? (
+                            format(date, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              ))}
+
+            {paymentType === "Weekly" && (
+              <div className="grid gap-2">
+                <Label htmlFor="payment-type">Payment Day</Label>
+                <Select
+                  value={day}
+                  onValueChange={(value: DayValue) => setDay(value)}
+                  required
+                >
+                  <SelectTrigger id="day">
+                    <SelectValue placeholder="Select Your Pay Day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((day) => (
+                      <SelectItem key={day.value} value={day.value}>
+                        {day.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

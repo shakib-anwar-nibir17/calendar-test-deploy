@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -48,8 +48,6 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
   const [hourlyRate, setHourlyRate] = useState(0);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const dispatch = useAppDispatch();
-
-  useEffect(() => {}, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
