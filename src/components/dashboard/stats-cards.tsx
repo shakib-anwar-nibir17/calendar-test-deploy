@@ -39,7 +39,7 @@ export default function StatsCards() {
 
   console.log(stats);
 
-  const [selectedView, setSelectedView] = useState("platform");
+  const [selectedView, setSelectedView] = useState("overview");
 
   return (
     <Card className="w-full mx-auto">
