@@ -46,7 +46,7 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
     useState<Platform["paymentType"]>("Upfront");
   const [day, setDay] = useState<DayValue>("monday");
   const [hourlyRate, setHourlyRate] = useState(0);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const dispatch = useAppDispatch();
 
   useEffect(() => {}, []);
@@ -73,6 +73,8 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
 
     onClose();
   };
+
+  console.log(date);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -129,35 +131,40 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
                 required
               />
             </div>
-            {paymentType === "Bi-Weekly" && (
-              <div className="grid gap-2">
-                <Label>Next Pay Date</Label>
-                <div className="flex flex-col gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+            {paymentType === "Bi-Weekly" ||
+              (paymentType === "Monthly" && (
+                <div className="grid gap-2">
+                  <Label>Next Pay Date</Label>
+                  <div className="flex flex-col gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? (
+                            format(date, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
 
             {paymentType === "Weekly" && (
               <div className="grid gap-2">
