@@ -1,36 +1,204 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity } from "lucide-react";
+"use client";
 
-export const RecentActivity = () => {
-  // This would typically come from an API or database
-  const activities: [] = [];
+import { useState, useEffect } from "react";
+import {
+  format,
+  differenceInMinutes,
+  differenceInHours,
+  differenceInDays,
+} from "date-fns";
+import { Clock, AlertCircle, CheckCircle, NotebookPen } from "lucide-react";
+
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { CalendarEvent } from "@/store/states/calender";
+import { getUpcomingAndRecentEvents } from "@/utils/event-filter";
+
+// Types
+// Helper function to format date display
+const formatEventDate = (date: Date): string => {
+  const now = new Date();
+
+  if (date > now) return ""; // Ignore future dates
+
+  const minutesAgo = differenceInMinutes(now, date);
+  const hoursAgo = differenceInHours(now, date);
+  const daysAgo = differenceInDays(now, date);
+
+  if (minutesAgo < 60) {
+    return `${minutesAgo} min ago`;
+  } else if (hoursAgo < 24) {
+    return `${hoursAgo} hr ago`;
+  } else if (daysAgo < 7) {
+    return `${daysAgo} days ago`;
+  } else {
+    return format(date, "MMM d, h:mm a");
+  }
+};
+
+// Helper to get status badge color
+const getStatusColor = (status: CalendarEvent["status"]) => {
+  switch (status) {
+    case "active":
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    case "completed":
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+    case "create":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+  }
+};
+
+export function RecentActivity() {
+  const [comingEvents, setComingEvents] = useState<CalendarEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate a small loading delay for better UX
+    const timer = setTimeout(() => {
+      const storedEvents = localStorage.getItem("calendarEvents") ?? "[]";
+      let parsedEvents: CalendarEvent[] = [];
+
+      try {
+        // Parse the events and convert string dates to Date objects
+        parsedEvents = JSON.parse(storedEvents, (key, value) => {
+          if (
+            key === "start" ||
+            key === "end" ||
+            key === "displayStart" ||
+            key === "displayEnd"
+          ) {
+            return value ? new Date(value) : null;
+          }
+          return value;
+        });
+      } catch (error) {
+        console.error("Error parsing calendar events:", error);
+      }
+
+      if (parsedEvents.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Sort upcoming events by start date
+      const { recentCompleted } = getUpcomingAndRecentEvents(parsedEvents);
+      const sortedEvents = [...recentCompleted].sort(
+        (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+      );
+
+      setComingEvents(sortedEvents);
+      setIsLoading(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, []); // ✅ Runs only on mount
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-primary" />
-          Recent Activity
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <NotebookPen className="h-5 w-5 text-primary" />
+          Recent Classes
         </CardTitle>
       </CardHeader>
+
       <CardContent>
-        {activities.length > 0 ? (
-          <div className="space-y-4">
-            {activities.map((activity) => (
-              <div key={activity} className="flex items-start gap-3">
-                {/* Activity content would go here */}
+        {(() => {
+          if (isLoading) {
+            return (
+              // Loading skeleton
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <Skeleton className="h-12 w-12 rounded-md" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground">No recent activity</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Your learning journey will be tracked here
-            </p>
-          </div>
-        )}
+            );
+          } else if (comingEvents.length > 0) {
+            return (
+              <ScrollArea className=" pr-4">
+                <div className="space-y-4">
+                  {comingEvents.map((event, index) => {
+                    return (
+                      <div key={event.id} className="group">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center"
+                            style={{ backgroundColor: `#AFE1AF` }}
+                          >
+                            <CheckCircle
+                              className="h-6 w-6"
+                              style={{ color: "#088F8F" }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-sm truncate">
+                                {event.platform}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className={`ml-2 ${getStatusColor(
+                                  event.status
+                                )}`}
+                              >
+                                {event.status}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-xs mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatEventDate(new Date(event.start))}
+                            </p>
+                          </div>
+                        </div>
+                        {index < comingEvents.length - 1 && (
+                          <Separator className="mt-4" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            );
+          } else {
+            return (
+              <div className="py-12 text-center space-y-3">
+                <div className="mx-auto bg-muted rounded-full w-12 h-12 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground">
+                  No recent classes scheduled
+                </p>
+              </div>
+            );
+          }
+        })()}
       </CardContent>
+
+      {comingEvents.length > 0 && (
+        <CardFooter className="border-t pt-4 flex justify-between">
+          <p className="text-xs text-muted-foreground">
+            {comingEvents.length} recent{" "}
+            {comingEvents.length === 1 ? "class" : "classes"}
+          </p>
+        </CardFooter>
+      )}
     </Card>
   );
-};
+}
