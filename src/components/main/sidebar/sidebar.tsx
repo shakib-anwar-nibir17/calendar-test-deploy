@@ -43,7 +43,7 @@ const Sidebar = () => {
                   : "translate-x-0 opacity-100"
               )}
             >
-              Brand
+              TAJRIN KASHEM
             </h1>
           </Link>
         </Button>
