@@ -104,6 +104,8 @@ export function RecentActivity() {
     return () => clearTimeout(timer);
   }, []); // ✅ Runs only on mount
 
+  console.log(comingEvents);
+
   return (
     <Card>
       <CardHeader>
