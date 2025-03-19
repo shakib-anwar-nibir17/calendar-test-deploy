@@ -8,15 +8,15 @@ import { PlatformsTable } from "../platform/platforms-table";
 import { AddPlatformModal } from "../platform/add-platform-modal";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { RootState } from "@/store";
-import { updatePlatform } from "@/store/slices/platform.slice";
 import { Platform } from "@/store/states/platforms";
 import { UpdatePlatformModal } from "../platform/update-platform-modal";
+import { deletePlatform } from "@/store/slices/platform.slice";
 
 const PlatformContainer = () => {
+  const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModal, setIsEditModal] = useState(false);
   const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
-  const dispatch = useAppDispatch();
 
   const platforms = useAppSelector(
     (state: RootState) => state.platforms.platforms
@@ -25,6 +25,10 @@ const PlatformContainer = () => {
   const handleEditPlatform = (platform: Platform) => {
     setEditPlatform(platform);
     setIsEditModal(!isEditModal);
+  };
+
+  const handleDeletePlatform = (platformId: string) => {
+    dispatch(deletePlatform(platformId));
   };
 
   return (
@@ -42,6 +46,7 @@ const PlatformContainer = () => {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
             <PlatformsTable
+              onDeletePlatform={handleDeletePlatform}
               onEditPlatform={handleEditPlatform}
               platforms={platforms}
             />

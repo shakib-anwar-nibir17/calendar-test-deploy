@@ -75,8 +75,6 @@ export function UpdatePlatformModal({
     dispatch(updatePlatform(updatableData));
   };
 
-  console.log(platform);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
