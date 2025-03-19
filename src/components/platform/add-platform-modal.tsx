@@ -60,6 +60,7 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
         paymentType: paymentType,
         hourlyRate: hourlyRate,
         nextPayData: nextPayData,
+        events: [],
       })
     );
 

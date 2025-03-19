@@ -18,7 +18,7 @@ export type Platform = {
   hourlyRate: number;
   nextPayData: string;
   day?: DayValue;
-  events: CalendarEvent[];
+  events?: CalendarEvent[];
 };
 
 export type PlatformsState = {
