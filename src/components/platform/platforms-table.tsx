@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableBody,
@@ -14,16 +16,35 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import { Calendar, DollarSign } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { formatDate } from "@/utils/formate-iso-date";
-import { Platform } from "@/store/states/platforms";
+import type { Platform } from "@/store/states/platforms";
+import { Button } from "@/components/ui/button";
 
 interface PlatformsTableProps {
   readonly platforms: Platform[];
+  readonly onEditPlatform?: (platform: Platform) => void;
+  readonly onDeletePlatform?: (platformId: string) => void;
 }
 
-export function PlatformsTable({ platforms }: PlatformsTableProps) {
+export function PlatformsTable({
+  platforms,
+  onEditPlatform,
+  onDeletePlatform,
+}: PlatformsTableProps) {
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -72,6 +93,7 @@ export function PlatformsTable({ platforms }: PlatformsTableProps) {
                 <TableHead>Payment Type</TableHead>
                 <TableHead>Hourly Rate</TableHead>
                 <TableHead>Next Pay Date</TableHead>
+                <TableHead className="w-[50px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,6 +123,40 @@ export function PlatformsTable({ platforms }: PlatformsTableProps) {
                         Not scheduled
                       </span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onEditPlatform && onEditPlatform(platform)
+                          }
+                          className="cursor-pointer"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onDeletePlatform && onDeletePlatform(platform.id)
+                          }
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

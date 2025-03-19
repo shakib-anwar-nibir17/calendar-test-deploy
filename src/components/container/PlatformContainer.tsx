@@ -6,15 +6,22 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { PlatformsTable } from "../platform/platforms-table";
 import { AddPlatformModal } from "../platform/add-platform-modal";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { RootState } from "@/store";
+import { updatePlatform } from "@/store/slices/platform.slice";
+import { Platform } from "@/store/states/platforms";
 
 const PlatformContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const dispatch = useAppDispatch();
 
   const platforms = useAppSelector(
     (state: RootState) => state.platforms.platforms
   );
+
+  const handleEditPlatform = (platform: Platform) => {
+    dispatch(updatePlatform(platform));
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -30,7 +37,10 @@ const PlatformContainer = () => {
         </div>
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
-            <PlatformsTable platforms={platforms} />
+            <PlatformsTable
+              onEditPlatform={handleEditPlatform}
+              platforms={platforms}
+            />
           </div>
         </main>
       </div>
