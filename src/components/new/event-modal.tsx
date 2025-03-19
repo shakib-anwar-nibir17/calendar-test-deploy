@@ -83,10 +83,19 @@ export default function EventModal({
     setEventData((prev) => ({ ...prev, platform }));
   }, [platform]);
 
-  // Sync hours engaged with event data
   useEffect(() => {
-    setEventData((prev) => ({ ...prev, hoursEngaged: totalHoursEngaged }));
-  }, [totalHoursEngaged]);
+    if (startDate && totalHoursEngaged > 0) {
+      const newEndDate = new Date(startDate);
+      newEndDate.setHours(newEndDate.getHours() + totalHoursEngaged);
+
+      setEventData((prev) => ({
+        ...prev,
+        hoursEngaged: totalHoursEngaged,
+        end: newEndDate, // Automatically update end date
+      }));
+      setEndDate(newEndDate);
+    }
+  }, [totalHoursEngaged, startDate]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -101,22 +110,10 @@ export default function EventModal({
     updateEventDates(date, startTime, endDate, endTime);
   };
 
-  const handleEndDateChange = (date: Date | undefined) => {
-    if (!date || !isEditable) return;
-    setEndDate(date);
-    updateEventDates(startDate, startTime, date, endTime);
-  };
-
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isEditable) return;
     setStartTime(e.target.value);
     updateEventDates(startDate, e.target.value, endDate, endTime);
-  };
-
-  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isEditable) return;
-    setEndTime(e.target.value);
-    updateEventDates(startDate, startTime, endDate, e.target.value);
   };
 
   const updateEventDates = (
