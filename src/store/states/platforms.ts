@@ -1,3 +1,5 @@
+import { CalendarEvent } from "./calender";
+
 type paymentType = "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
 
 export type DayValue =
@@ -16,6 +18,7 @@ export type Platform = {
   hourlyRate: number;
   nextPayData: string;
   day?: DayValue;
+  events: CalendarEvent[];
 };
 
 export type PlatformsState = {
