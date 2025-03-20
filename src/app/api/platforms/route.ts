@@ -1,11 +1,10 @@
-import { NextResponse } from "next/server";
 import { connectToMongoDB } from "@/lib/mongodb";
-import Platform from "@/models/platform.model";
+import CalendarEventModel from "@/models/calendar-event.model";
 import { sendResponse } from "@/utils/server/response.handler";
 import { HTTP_STATUS_CODES } from "@/utils/server/http-status-codes";
 import { sendError } from "@/utils/server/error.handler";
 
-// Create a new platform (POST)
+// Create a new event (POST)
 export async function POST(req: Request) {
   await connectToMongoDB();
 
@@ -13,60 +12,54 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("Received payload:", body);
 
-    const { name, paymentType, hourlyRate, nextPayDate, day, events } = body;
+    const { title, date, description, location } = body;
 
-    if (!name || !paymentType || !hourlyRate) {
-      console.error("Missing required fields:", {
-        name,
-        paymentType,
-        hourlyRate,
-      });
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
+    if (!title || !date) {
+      console.error("Missing required fields:", { title, date });
+      return sendError(
+        HTTP_STATUS_CODES.BAD_REQUEST,
+        "Missing required fields"
       );
     }
 
-    const newPlatform = new Platform({
-      name,
-      paymentType,
-      hourlyRate,
-      nextPayDate,
-      day,
-      events,
+    const newEvent = new CalendarEventModel({
+      title,
+      date,
+      description,
+      location,
     });
-    await newPlatform.save();
+    await newEvent.save();
 
     return sendResponse(
-      newPlatform,
+      newEvent,
       HTTP_STATUS_CODES.CREATED,
-      "Platform created successfully"
+      "Event created successfully"
     );
   } catch (error) {
     return sendError(
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      "Error",
+      "Error creating event",
       error instanceof Error ? error.message : "Unknown error"
     );
   }
 }
 
-// Get all platforms (GET)
+// Get all events (GET)
 export async function GET() {
   await connectToMongoDB();
 
   try {
-    const platforms = await Platform.find().populate("events");
+    const events = await CalendarEventModel.find();
 
     return sendResponse(
-      platforms,
+      events,
       HTTP_STATUS_CODES.OK,
-      "Platforms fetched successfully"
+      "Events fetched successfully"
     );
   } catch (error) {
     return sendError(
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      "Error",
+      "Error fetching events",
       error instanceof Error ? error.message : "Unknown error"
     );
   }
