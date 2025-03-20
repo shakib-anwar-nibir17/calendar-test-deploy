@@ -28,6 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   connectToMongoDB();
+
   return (
     <html lang="en">
       <ReduxProvider>
