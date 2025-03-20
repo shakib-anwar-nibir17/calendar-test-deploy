@@ -32,18 +32,23 @@ import {
 import { format } from "date-fns";
 import { DayValue, Platform } from "@/store/states/platforms";
 import { daysOfWeek } from "@/utils/platform-utils";
+import { useUpdatePlatformMutation } from "@/store/services/platform.service";
+import { toast } from "sonner";
 
-interface AddPlatformModalProps {
+interface UpdatePlatformModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly platform: Platform | null;
+  readonly refetch: () => void;
 }
 
 export function UpdatePlatformModal({
   isOpen,
   onClose,
   platform,
-}: AddPlatformModalProps) {
+  refetch,
+}: UpdatePlatformModalProps) {
+  const [updatePlatform, { isLoading }] = useUpdatePlatformMutation();
   const [name, setName] = useState("");
   const [paymentType, setPaymentType] =
     useState<Platform["paymentType"]>("Upfront");
@@ -64,29 +69,33 @@ export function UpdatePlatformModal({
     setDay(platform?.day ?? "monday");
   }, [platform]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const updatableData = {
       id: platform?._id ?? "",
       name: name,
       paymentType: paymentType,
       hourlyRate: hourlyRate,
-      nextPayData: date?.toISOString() ?? "",
+      nextPayDate: date?.toISOString() ?? "",
       day: day,
     };
-    console.log(updatableData);
+
+    const response = await updatePlatform(updatableData);
+    if (response.data?.success === true) {
+      toast.success("Platform updated successfully.");
+      refetch();
+    } else {
+      toast.error("Failed to update platform.");
+    }
+    onClose();
   };
-
-  console.log("date", date);
-
-  console.log("updated date", platform?.nextPayDate);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add Teaching Platform</DialogTitle>
+            <DialogTitle>Update Teaching Platform</DialogTitle>
             <DialogDescription>
               Enter the details of the online platform where you teach
               mathematics.
@@ -157,7 +166,7 @@ export function UpdatePlatformModal({
                       <Calendar
                         mode="single"
                         selected={date}
-                        onSelect={setDate}
+                        onSelect={(day) => day && setDate(day)}
                         initialFocus
                       />
                     </PopoverContent>
@@ -192,7 +201,9 @@ export function UpdatePlatformModal({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Platform</Button>
+            <Button disabled={isLoading} type="submit">
+              Update Platform
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -21,7 +21,7 @@ const PlatformContainer = () => {
   const [isEditModal, setIsEditModal] = useState(false);
   const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
 
-  const { data: allPlatforms } = useGetPlatformsQuery();
+  const { data: allPlatforms, refetch } = useGetPlatformsQuery();
   const [deletePlatform] = useDeletePlatformMutation();
 
   const handleEditPlatform = (id: string) => {
@@ -74,6 +74,7 @@ const PlatformContainer = () => {
         isOpen={isEditModal}
         onClose={() => setIsEditModal(false)}
         platform={editPlatform}
+        refetch={refetch}
       />
     </div>
   );

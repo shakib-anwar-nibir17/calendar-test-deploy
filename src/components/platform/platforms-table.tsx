@@ -23,13 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Calendar,
-  DollarSign,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Calendar, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { formatDate } from "@/utils/formate-iso-date";
 import type { Platform } from "@/store/states/platforms";
 import { Button } from "@/components/ui/button";
@@ -109,7 +103,6 @@ export function PlatformsTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
                     {formatCurrency(platform.hourlyRate)}
                   </TableCell>
                   <TableCell>
