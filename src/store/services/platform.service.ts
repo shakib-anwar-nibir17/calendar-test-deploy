@@ -20,7 +20,10 @@ export const platformApi = createApi({
     }),
 
     // Create a new platform
-    createPlatform: builder.mutation<PlatformResponse, Omit<Platform, "id">>({
+    createPlatform: builder.mutation<
+      PlatformResponse,
+      Omit<Platform, "id" | "createdAt" | "updatedAt">
+    >({
       query: (newPlatform) => ({
         url: "",
         method: "POST",

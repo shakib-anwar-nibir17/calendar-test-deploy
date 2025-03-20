@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { connectToMongoDB } from "@/lib/mongodb";
 import Platform from "@/models/platform.model";
+import { sendResponse } from "@/utils/server/response.handler";
+import { HTTP_STATUS_CODES } from "@/utils/server/http-status-codes";
+import { sendError } from "@/utils/server/error.handler";
 
 // Get a platform by ID
 export async function GET(
@@ -13,17 +15,19 @@ export async function GET(
     const platform = await Platform.findById(params.id).populate("events");
 
     if (!platform) {
-      return NextResponse.json(
-        { error: "Platform not found" },
-        { status: 404 }
-      );
+      return sendError(HTTP_STATUS_CODES.NOT_FOUND, "Platform not found");
     }
 
-    return NextResponse.json(platform, { status: 200 });
+    return sendResponse(
+      platform,
+      HTTP_STATUS_CODES.OK,
+      "Platform fetched successfully"
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error", details: error },
-      { status: 500 }
+    return sendError(
+      HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      "Error fetching platform",
+      error instanceof Error ? error.message : "Unknown error"
     );
   }
 }
@@ -40,21 +44,25 @@ export async function PUT(
     const updatedPlatform = await Platform.findByIdAndUpdate(
       params.id,
       updates,
-      { new: true }
+      {
+        new: true,
+      }
     );
 
     if (!updatedPlatform) {
-      return NextResponse.json(
-        { error: "Platform not found" },
-        { status: 404 }
-      );
+      return sendError(HTTP_STATUS_CODES.NOT_FOUND, "Platform not found");
     }
 
-    return NextResponse.json(updatedPlatform, { status: 200 });
+    return sendResponse(
+      updatedPlatform,
+      HTTP_STATUS_CODES.OK,
+      "Platform updated successfully"
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error", details: error },
-      { status: 500 }
+    return sendError(
+      HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      "Error updating platform",
+      error instanceof Error ? error.message : "Unknown error"
     );
   }
 }
@@ -70,17 +78,19 @@ export async function DELETE(
     const deletedPlatform = await Platform.findByIdAndDelete(params.id);
 
     if (!deletedPlatform) {
-      return NextResponse.json(
-        { error: "Platform not found" },
-        { status: 404 }
-      );
+      return sendError(HTTP_STATUS_CODES.NOT_FOUND, "Platform not found");
     }
 
-    return NextResponse.json({ message: "Platform deleted" }, { status: 200 });
+    return sendResponse(
+      null,
+      HTTP_STATUS_CODES.OK,
+      "Platform deleted successfully"
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error", details: error },
-      { status: 500 }
+    return sendError(
+      HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      "Error deleting platform",
+      error instanceof Error ? error.message : "Unknown error"
     );
   }
 }
