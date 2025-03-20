@@ -19,6 +19,8 @@ export type Platform = {
   nextPayDate?: string;
   day?: DayValue;
   events?: CalendarEvent[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type PlatformsState = {
@@ -28,12 +30,6 @@ export type PlatformsState = {
 export interface PlatformResponse {
   success: boolean;
   code: number;
-  data: {
-    id: string;
-    name: string;
-    description?: string;
-    createdAt: string;
-    updatedAt: string;
-  };
+  data: Platform[];
   message?: string;
 }

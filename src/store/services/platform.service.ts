@@ -8,13 +8,9 @@ export const platformApi = createApi({
 
   endpoints: (builder) => ({
     // Fetch all platforms
-    getPlatforms: builder.query({
-      query: () => "",
+    getPlatforms: builder.query<PlatformResponse, void>({
+      query: () => "/",
       providesTags: ["Platforms"],
-      transformResponse: (response) => {
-        console.log("Fetched platforms:", response);
-        return response;
-      },
     }),
 
     // Fetch a single platform by ID

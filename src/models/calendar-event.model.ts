@@ -1,4 +1,4 @@
-import { Schema, Document, model } from "mongoose";
+import mongoose, { Schema, Document, model } from "mongoose";
 
 export interface CalendarEvent extends Document {
   title: string;
@@ -16,9 +16,8 @@ const calendarEventSchema = new Schema<CalendarEvent>({
   description: { type: String },
 });
 
-const CalendarEventModel = model<CalendarEvent>(
-  "CalendarEvent",
-  calendarEventSchema
-);
+const CalendarEventModel =
+  mongoose.models.CalendarEvent ||
+  model<CalendarEvent>("CalendarEvent", calendarEventSchema);
 
 export default CalendarEventModel;

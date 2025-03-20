@@ -6,11 +6,11 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { PlatformsTable } from "../platform/platforms-table";
 import { AddPlatformModal } from "../platform/add-platform-modal";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { RootState } from "@/store";
+import { useAppDispatch } from "@/store/hooks";
 import { Platform } from "@/store/states/platforms";
 import { UpdatePlatformModal } from "../platform/update-platform-modal";
 import { deletePlatform } from "@/store/slices/platform.slice";
+import { useGetPlatformsQuery } from "@/store/services/platform.service";
 
 const PlatformContainer = () => {
   const dispatch = useAppDispatch();
@@ -18,9 +18,7 @@ const PlatformContainer = () => {
   const [isEditModal, setIsEditModal] = useState(false);
   const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
 
-  const platforms = useAppSelector(
-    (state: RootState) => state.platforms.platforms
-  );
+  const { data: allPlatforms } = useGetPlatformsQuery();
 
   const handleEditPlatform = (platform: Platform) => {
     setEditPlatform(platform);
@@ -30,6 +28,8 @@ const PlatformContainer = () => {
   const handleDeletePlatform = (platformId: string) => {
     dispatch(deletePlatform(platformId));
   };
+
+  console.log("all platforms", allPlatforms);
 
   return (
     <div className="flex h-screen bg-background">
@@ -45,11 +45,13 @@ const PlatformContainer = () => {
         </div>
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
-            <PlatformsTable
-              onDeletePlatform={handleDeletePlatform}
-              onEditPlatform={handleEditPlatform}
-              platforms={platforms}
-            />
+            {allPlatforms && (
+              <PlatformsTable
+                platforms={allPlatforms.data}
+                onEditPlatform={handleEditPlatform}
+                onDeletePlatform={handleDeletePlatform}
+              />
+            )}
           </div>
         </main>
       </div>

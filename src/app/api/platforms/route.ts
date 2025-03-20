@@ -57,11 +57,17 @@ export async function GET() {
 
   try {
     const platforms = await Platform.find().populate("events");
-    return NextResponse.json(platforms, { status: 200 });
+
+    return sendResponse(
+      platforms,
+      HTTP_STATUS_CODES.OK,
+      "Platforms fetched successfully"
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error", details: error },
-      { status: 500 }
+    return sendError(
+      HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      "Error",
+      error instanceof Error ? error.message : "Unknown error"
     );
   }
 }

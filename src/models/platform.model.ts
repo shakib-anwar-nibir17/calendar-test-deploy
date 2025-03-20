@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, model } from "mongoose";
-import { CalendarEvent } from "./calendar-event.model";
+import CalendarEventModel, { CalendarEvent } from "./calendar-event.model"; // Ensure CalendarEventModel is imported
 
 export interface PlatformDocument extends Document {
   name: string;
@@ -17,6 +17,11 @@ export interface PlatformDocument extends Document {
   events: CalendarEvent[];
 }
 
+if (!mongoose.models.CalendarEvent) {
+  mongoose.model("CalendarEvent", CalendarEventModel.schema);
+}
+
+// Define Platform schema
 const platformSchema = new Schema<PlatformDocument>(
   {
     name: { type: String, required: true, unique: true },
@@ -39,11 +44,12 @@ const platformSchema = new Schema<PlatformDocument>(
         "sunday",
       ],
     },
-    events: [{ type: Schema.Types.ObjectId, ref: "CalendarEvent" }],
+    events: [{ type: Schema.Types.ObjectId, ref: "CalendarEvent" }], // Ensure this model is registered
   },
   { timestamps: true }
 );
 
+// Ensure the model is registered only once
 const Platform =
   mongoose.models.Platform ||
   model<PlatformDocument>("Platform", platformSchema);
