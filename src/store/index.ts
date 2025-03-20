@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import sidebarReducer from "./slices/sidebar.slice";
-import platformReducer from "./slices/platform.slice";
 import { timeZoneApi } from "./services/time-zone.service";
 import { platformApi } from "./services/platform.service";
 import { calendarEventApi } from "./services/calendar-event.service";
@@ -9,7 +8,6 @@ export const makeStore = () => {
   return configureStore({
     reducer: {
       sidebar: sidebarReducer,
-      platforms: platformReducer,
       [timeZoneApi.reducerPath]: timeZoneApi.reducer,
       [platformApi.reducerPath]: platformApi.reducer,
       [calendarEventApi.reducerPath]: calendarEventApi.reducer,
