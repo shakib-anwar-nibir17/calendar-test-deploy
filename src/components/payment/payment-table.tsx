@@ -8,7 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAppSelector } from "@/store/hooks";
+
+import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { CalendarEvent } from "@/store/states/calender";
 import { Platform } from "@/store/states/platforms";
 import { useEffect, useState } from "react";
@@ -32,10 +33,13 @@ const calculateTotalPay = (hours: number, rate: number) => {
 };
 
 export default function PaymentsPage() {
-  const platforms = useAppSelector((state) => state.platforms.platforms);
+  const { data: platforms } = useGetPlatformsQuery();
+
   const [payments, setPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
+    if (!platforms) return;
+
     const storedPayments = localStorage.getItem("calendarEvents");
     if (storedPayments) {
       const parsedPayments: CalendarEvent[] = JSON.parse(storedPayments);
@@ -43,49 +47,60 @@ export default function PaymentsPage() {
       const newData = parsedPayments
         .filter((payment) => payment.status === "completed")
         .map((payment) => {
-          const platform = platforms.find((p) => p.name === payment.platform);
+          const platform = platforms.data?.find(
+            (p) => p.name === payment.platform
+          );
 
           return platform ? { calenderEvent: payment, platform } : null;
         })
-        .filter((item): item is Payment => item !== null); // Type guard
+        .filter((item): item is Payment => item !== null);
 
       setPayments(newData);
     }
-  }, [platforms]); // Re-run when platforms change
+  }, [platforms]);
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-5">Payment History</h1>
       <Table>
-        <TableCaption>A list of your recent payments.</TableCaption>
         <TableHeader>
-          <TableRow>
-            <TableHead>Id</TableHead>
-            <TableHead className="text-right">Hourly Rate</TableHead>
-            <TableHead className="text-right">Hours</TableHead>
-            <TableHead>Platform</TableHead>
-            <TableHead className="text-right">Total Pay</TableHead>
-          </TableRow>
+          {payments.length > 0 && (
+            <TableRow>
+              <TableHead className="text-left">Payment ID</TableHead>
+              <TableHead className="text-right">Hourly Rate</TableHead>
+              <TableHead className="text-right">Hours Engaged</TableHead>
+              <TableHead>Platform</TableHead>
+              <TableHead className="text-right">Total Pay</TableHead>
+            </TableRow>
+          )}
         </TableHeader>
         <TableBody>
-          {payments.map((payment) => (
-            <TableRow key={payment.calenderEvent.id}>
-              <TableCell>{payment.calenderEvent.id}</TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(payment.platform.hourlyRate)}
-              </TableCell>
-              <TableCell className="text-right">
-                {payment.calenderEvent.hoursEngaged?.toFixed(2)}
-              </TableCell>
-              <TableCell>{payment.calenderEvent.platform}</TableCell>
-              <TableCell className="text-right font-medium">
-                {calculateTotalPay(
-                  payment.calenderEvent.hoursEngaged ?? 0,
-                  payment.platform.hourlyRate
-                )}
+          {payments.length > 0 ? (
+            payments.map((payment) => (
+              <TableRow key={payment.calenderEvent.id}>
+                <TableCell>{payment.calenderEvent.id}</TableCell>
+                <TableCell className="text-right font-medium">
+                  {formatCurrency(payment.platform.hourlyRate)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {payment.calenderEvent.hoursEngaged?.toFixed(2)}
+                </TableCell>
+                <TableCell>{payment.calenderEvent.platform}</TableCell>
+                <TableCell className="text-right font-medium">
+                  {calculateTotalPay(
+                    payment.calenderEvent.hoursEngaged ?? 0,
+                    payment.platform.hourlyRate
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
+                No payment data available.
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>

@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { CalendarEvent, CalendarEventResponse } from "../states/calender";
 
 export const calendarEventApi = createApi({
   reducerPath: "calendarEventApi",
@@ -6,7 +7,7 @@ export const calendarEventApi = createApi({
   tagTypes: ["Events"], // ✅ Only keeps relevant tag
 
   endpoints: (builder) => ({
-    getEvents: builder.query({
+    getEvents: builder.query<CalendarEventResponse, void>({
       query: () => "/calendar-events", // ✅ Matches API structure
       providesTags: ["Events"],
     }),
@@ -16,7 +17,10 @@ export const calendarEventApi = createApi({
       providesTags: (result, error, id) => [{ type: "Events", id }],
     }),
 
-    createEvent: builder.mutation({
+    createEvent: builder.mutation<
+      CalendarEventResponse,
+      Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">
+    >({
       query: (newEvent) => ({
         url: "/calendar-events",
         method: "POST",
