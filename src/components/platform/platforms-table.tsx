@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 
 interface PlatformsTableProps {
   readonly platforms: Platform[];
-  readonly onEditPlatform?: (platform: Platform) => void;
+  readonly onEditPlatform?: (platformId: string) => void;
   readonly onDeletePlatform?: (platformId: string) => void;
 }
 
@@ -120,7 +120,7 @@ export function PlatformsTable({
                       </div>
                     ) : (
                       <span className="text-muted-foreground">
-                        Not scheduled
+                        {platform.day ? platform.day : "Not Scheduled"}
                       </span>
                     )}
                   </TableCell>
@@ -139,7 +139,7 @@ export function PlatformsTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() =>
-                            onEditPlatform && onEditPlatform(platform)
+                            onEditPlatform && onEditPlatform(platform?._id)
                           }
                           className="cursor-pointer"
                         >

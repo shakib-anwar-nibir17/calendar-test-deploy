@@ -58,7 +58,7 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
       name: name,
       paymentType: paymentType,
       hourlyRate: hourlyRate,
-      nextPayData: nextPayData,
+      nextPayDate: nextPayData,
       day: day,
     };
 

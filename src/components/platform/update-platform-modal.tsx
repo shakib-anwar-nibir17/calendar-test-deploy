@@ -31,9 +31,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { DayValue, Platform } from "@/store/states/platforms";
-import { useAppDispatch } from "@/store/hooks";
 import { daysOfWeek } from "@/utils/platform-utils";
-import { updatePlatform } from "@/store/slices/platform.slice";
 
 interface AddPlatformModalProps {
   readonly isOpen: boolean;
@@ -51,29 +49,37 @@ export function UpdatePlatformModal({
     useState<Platform["paymentType"]>("Upfront");
   const [day, setDay] = useState<DayValue>("monday");
   const [hourlyRate, setHourlyRate] = useState(0);
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const dispatch = useAppDispatch();
+  const [date, setDate] = useState<Date>(new Date());
 
   useEffect(() => {
     setName(platform?.name ?? "");
     setPaymentType(platform?.paymentType ?? "Upfront");
     setHourlyRate(platform?.hourlyRate ?? 0);
-    setDate(new Date(platform?.nextPayData ?? ""));
+
+    // Ensure nextPayDate is a valid date
+    setDate(
+      platform?.nextPayDate ? new Date(platform.nextPayDate) : new Date()
+    );
+
     setDay(platform?.day ?? "monday");
   }, [platform]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const updatableData = {
-      id: platform?.id ?? "",
+      id: platform?._id ?? "",
       name: name,
       paymentType: paymentType,
       hourlyRate: hourlyRate,
       nextPayData: date?.toISOString() ?? "",
       day: day,
     };
-    dispatch(updatePlatform(updatableData));
+    console.log(updatableData);
   };
+
+  console.log("date", date);
+
+  console.log("updated date", platform?.nextPayDate);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -130,40 +136,35 @@ export function UpdatePlatformModal({
                 required
               />
             </div>
-            {paymentType === "Bi-Weekly" ||
-              (paymentType === "Monthly" && (
-                <div className="grid gap-2">
-                  <Label>Next Pay Date</Label>
-                  <div className="flex flex-col gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {date ? (
-                            format(date, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+            {(paymentType === "Bi-Weekly" || paymentType === "Monthly") && (
+              <div className="grid gap-2">
+                <Label>Next Pay Date</Label>
+                <div className="flex flex-col gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              ))}
+              </div>
+            )}
 
             {paymentType === "Weekly" && (
               <div className="grid gap-2">

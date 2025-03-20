@@ -24,8 +24,10 @@ const PlatformContainer = () => {
   const { data: allPlatforms } = useGetPlatformsQuery();
   const [deletePlatform] = useDeletePlatformMutation();
 
-  const handleEditPlatform = (platform: Platform) => {
-    setEditPlatform(platform);
+  const handleEditPlatform = (id: string) => {
+    if (!allPlatforms?.data) return;
+    const platform = allPlatforms.data?.find((p) => p._id === id);
+    setEditPlatform(platform ?? null);
     setIsEditModal(!isEditModal);
   };
 
@@ -38,7 +40,7 @@ const PlatformContainer = () => {
     }
   };
 
-  console.log("all platforms", allPlatforms);
+  console.log("all platforms", editPlatform);
 
   return (
     <div className="flex h-screen bg-background">
