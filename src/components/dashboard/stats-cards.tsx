@@ -26,16 +26,16 @@ import {
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { extractPlatformStatistics } from "@/utils/platform-statistics";
-import { useAppSelector } from "@/store/hooks";
 import { getFromLocalStorage } from "@/utils/local-storage";
 import { CalendarEvent } from "@/store/states/calender";
+import { useGetPlatformsQuery } from "@/store/services/platform.service";
 
 // Mock data for platforms
 
 export default function StatsCards() {
-  const platforms = useAppSelector((state) => state.platforms.platforms);
+  const { data: platforms } = useGetPlatformsQuery();
   const events = getFromLocalStorage<CalendarEvent[]>("calendarEvents") || [];
-  const stats = extractPlatformStatistics(events, platforms);
+  const stats = extractPlatformStatistics(events, platforms?.data || []);
 
   console.log(stats);
 

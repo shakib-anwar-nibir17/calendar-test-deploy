@@ -12,15 +12,24 @@ export type DayValue =
   | "sunday";
 
 export type Platform = {
-  id: string;
+  _id: string;
   name: string;
   paymentType: paymentType;
   hourlyRate: number;
-  nextPayData: string;
+  nextPayDate?: string;
   day?: DayValue;
-  events: CalendarEvent[];
+  events?: CalendarEvent[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type PlatformsState = {
   platforms: Platform[];
 };
+
+export interface PlatformResponse {
+  success: boolean;
+  code: number;
+  data: Platform[];
+  message?: string;
+}

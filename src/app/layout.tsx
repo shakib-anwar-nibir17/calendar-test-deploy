@@ -3,8 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "@/store/store-provider";
 import { ThemeProvider } from "next-themes";
-import { TimeZoneProvider } from "@/components/new/time-zone-context";
+import { TimeZoneProvider } from "@/components/schedule/time-zone-context";
 import { Toaster } from "sonner";
+import { connectToMongoDB } from "@/lib/mongodb";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  connectToMongoDB();
+
   return (
     <html lang="en">
       <ReduxProvider>

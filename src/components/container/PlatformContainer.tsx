@@ -6,30 +6,41 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { PlatformsTable } from "../platform/platforms-table";
 import { AddPlatformModal } from "../platform/add-platform-modal";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { RootState } from "@/store";
+
 import { Platform } from "@/store/states/platforms";
 import { UpdatePlatformModal } from "../platform/update-platform-modal";
-import { deletePlatform } from "@/store/slices/platform.slice";
+
+import {
+  useDeletePlatformMutation,
+  useGetPlatformsQuery,
+} from "@/store/services/platform.service";
+import { toast } from "sonner";
 
 const PlatformContainer = () => {
-  const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModal, setIsEditModal] = useState(false);
   const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
 
-  const platforms = useAppSelector(
-    (state: RootState) => state.platforms.platforms
-  );
+  const { data: allPlatforms, refetch } = useGetPlatformsQuery();
+  const [deletePlatform] = useDeletePlatformMutation();
 
-  const handleEditPlatform = (platform: Platform) => {
-    setEditPlatform(platform);
+  const handleEditPlatform = (id: string) => {
+    if (!allPlatforms?.data) return;
+    const platform = allPlatforms.data?.find((p) => p._id === id);
+    setEditPlatform(platform ?? null);
     setIsEditModal(!isEditModal);
   };
 
-  const handleDeletePlatform = (platformId: string) => {
-    dispatch(deletePlatform(platformId));
+  const handleDeletePlatform = async (platformId: string) => {
+    const response = await deletePlatform(platformId);
+    if (response.data?.success === true) {
+      toast.success("Platform deleted successfully.");
+    } else {
+      toast.error("Failed to delete platform.");
+    }
   };
+
+  console.log("all platforms", editPlatform);
 
   return (
     <div className="flex h-screen bg-background">
@@ -45,11 +56,13 @@ const PlatformContainer = () => {
         </div>
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
-            <PlatformsTable
-              onDeletePlatform={handleDeletePlatform}
-              onEditPlatform={handleEditPlatform}
-              platforms={platforms}
-            />
+            {allPlatforms && (
+              <PlatformsTable
+                platforms={allPlatforms.data}
+                onEditPlatform={handleEditPlatform}
+                onDeletePlatform={handleDeletePlatform}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -61,6 +74,7 @@ const PlatformContainer = () => {
         isOpen={isEditModal}
         onClose={() => setIsEditModal(false)}
         platform={editPlatform}
+        refetch={refetch}
       />
     </div>
   );

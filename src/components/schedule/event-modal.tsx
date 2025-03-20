@@ -20,10 +20,10 @@ import {
 import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { SelectMenu } from "../main/select-menu";
-import { useAppSelector } from "@/store/hooks";
 import HourMinuteInput from "../ui/hour-minute";
 import { CalendarEvent } from "@/store/states/calender";
 import { Platform } from "@/store/states/platforms";
+import { useGetPlatformsQuery } from "@/store/services/platform.service";
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -42,7 +42,7 @@ export default function EventModal({
   onDelete,
   timeZone,
 }: EventModalProps) {
-  const platforms = useAppSelector((state) => state.platforms.platforms);
+  const { data: platforms } = useGetPlatformsQuery();
   const [platform, setPlatform] = useState<Platform["name"]>("");
   const [eventData, setEventData] = useState<CalendarEvent>({
     id: "",
@@ -70,7 +70,7 @@ export default function EventModal({
       setEventData(event);
       setStartDate(event.start);
       setEndDate(event.end);
-      setPlatform(event.platform ?? (platforms[0]?.name || ""));
+      setPlatform(event.platform ?? platforms?.data[0]?.name ?? "");
 
       // Format times for inputs
       setStartTime(format(event.start, "HH:mm"));
@@ -184,16 +184,17 @@ export default function EventModal({
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <SelectMenu
-              label="Platform"
-              options={platforms}
-              getOptionLabel={(p) => p.name}
-              getOptionValue={(p) => p.name}
-              value={platforms.length > 0 ? platform : ""}
-              onChange={(p) => setPlatform(p)}
-              className="w-full"
-              disabled={!isEditable}
-            />
+            {(platforms?.data ?? []).length > 0 && (
+              <SelectMenu
+                label="Platform"
+                options={platforms?.data ?? []}
+                getOptionLabel={(p) => p.name}
+                getOptionValue={(p) => p.name}
+                value={platform}
+                onChange={(platform) => setPlatform(platform)}
+                className="w-full"
+              />
+            )}
           </div>
 
           {eventData.status === "active" && (

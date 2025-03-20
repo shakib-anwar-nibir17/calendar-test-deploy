@@ -31,9 +31,9 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { DayValue, Platform } from "@/store/states/platforms";
-import { addPlatform } from "@/store/slices/platform.slice";
-import { useAppDispatch } from "@/store/hooks";
 import { daysOfWeek } from "@/utils/platform-utils";
+import { useCreatePlatformMutation } from "@/store/services/platform.service";
+import { toast } from "sonner";
 
 interface AddPlatformModalProps {
   readonly isOpen: boolean;
@@ -47,27 +47,32 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
   const [day, setDay] = useState<DayValue>("monday");
   const [hourlyRate, setHourlyRate] = useState(0);
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const dispatch = useAppDispatch();
+  const [createProfile, { isLoading }] = useCreatePlatformMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nextPayData = date ? date.toISOString() : "";
 
-    dispatch(
-      addPlatform({
-        name: name,
-        paymentType: paymentType,
-        hourlyRate: hourlyRate,
-        nextPayData: nextPayData,
-      })
-    );
+    const platformData = {
+      name: name,
+      paymentType: paymentType,
+      hourlyRate: hourlyRate,
+      nextPayDate: nextPayData,
+      day: day,
+    };
 
+    const response = await createProfile(platformData);
+    if (response.data?.success === true) {
+      toast.success("Platform added successfully.");
+      setName("");
+      setPaymentType("Upfront");
+      setHourlyRate(0);
+      setDate(new Date());
+    } else {
+      toast.error("Failed to add platform.");
+    }
     // Reset form
-    setName("");
-    setPaymentType("Weekly");
-    setHourlyRate(0);
-    setDate(undefined);
 
     onClose();
   };
@@ -129,40 +134,35 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
                 required
               />
             </div>
-            {paymentType === "Bi-Weekly" ||
-              (paymentType === "Monthly" && (
-                <div className="grid gap-2">
-                  <Label>Next Pay Date</Label>
-                  <div className="flex flex-col gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {date ? (
-                            format(date, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+            {(paymentType === "Bi-Weekly" || paymentType === "Monthly") && (
+              <div className="grid gap-2">
+                <Label>Next Pay Date</Label>
+                <div className="flex flex-col gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              ))}
+              </div>
+            )}
 
             {paymentType === "Weekly" && (
               <div className="grid gap-2">
@@ -190,7 +190,9 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Platform</Button>
+            <Button disabled={isLoading} type="submit">
+              Add Platform
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

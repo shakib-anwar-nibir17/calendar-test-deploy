@@ -5,19 +5,20 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatInTimeZone } from "date-fns-tz";
-import TimeZoneSelector from "../new/time-zone-selector";
-import CalendarComponent from "../new/calender-component";
-import EventModal from "../new/event-modal";
-import { useTimeZone } from "../new/time-zone-context";
-import { TimeDisplay } from "../new/time-display";
+import TimeZoneSelector from "../schedule/time-zone-selector";
+import CalendarComponent from "../schedule/calender-component";
+import EventModal from "../schedule/event-modal";
+import { useTimeZone } from "../schedule/time-zone-context";
+import { TimeDisplay } from "../schedule/time-display";
 import { CalendarEvent } from "@/store/states/calender";
 import { SlotInfo } from "react-big-calendar";
-import { useAppSelector } from "@/store/hooks";
+
 import { toast } from "sonner";
+import { useGetPlatformsQuery } from "@/store/services/platform.service";
 // Assuming you have a toast component
 
 export default function ScheduleContainer() {
-  const platforms = useAppSelector((state) => state.platforms.platforms);
+  const { data: platforms } = useGetPlatformsQuery();
   const { currentTimeZone, setCurrentTimeZone, timeData } = useTimeZone();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -61,7 +62,7 @@ export default function ScheduleContainer() {
     setIsAddingEvent(true);
     setCurrentEvent({
       id: Date.now().toString(),
-      platform: platforms[0]?.name || "",
+      platform: platforms?.data[0]?.name ?? "",
       start: new Date(),
       end: new Date(new Date().setHours(new Date().getHours() + 1)),
       status: "create",
@@ -75,7 +76,7 @@ export default function ScheduleContainer() {
     setIsAddingEvent(true);
     setCurrentEvent({
       id: Date.now().toString(),
-      platform: platforms[0]?.name || "",
+      platform: platforms?.data[0]?.name ?? "",
       start,
       end,
       status: "create",

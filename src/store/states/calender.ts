@@ -11,6 +11,8 @@ export interface CalendarEvent {
   hoursEngaged?: number;
   status: "active" | "completed" | "create";
   timeZone: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SlotInfo {
@@ -18,4 +20,11 @@ export interface SlotInfo {
   end: Date;
   slots: Date[];
   action: "select" | "click" | "doubleClick";
+}
+
+export interface CalendarEventResponse {
+  success: boolean;
+  code: number;
+  data: CalendarEvent[];
+  message?: string;
 }
