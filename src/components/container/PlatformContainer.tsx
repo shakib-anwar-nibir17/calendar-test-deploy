@@ -6,27 +6,36 @@ import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { PlatformsTable } from "../platform/platforms-table";
 import { AddPlatformModal } from "../platform/add-platform-modal";
-import { useAppDispatch } from "@/store/hooks";
+
 import { Platform } from "@/store/states/platforms";
 import { UpdatePlatformModal } from "../platform/update-platform-modal";
-import { deletePlatform } from "@/store/slices/platform.slice";
-import { useGetPlatformsQuery } from "@/store/services/platform.service";
+
+import {
+  useDeletePlatformMutation,
+  useGetPlatformsQuery,
+} from "@/store/services/platform.service";
+import { toast } from "sonner";
 
 const PlatformContainer = () => {
-  const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModal, setIsEditModal] = useState(false);
   const [editPlatform, setEditPlatform] = useState<Platform | null>(null);
 
   const { data: allPlatforms } = useGetPlatformsQuery();
+  const [deletePlatform] = useDeletePlatformMutation();
 
   const handleEditPlatform = (platform: Platform) => {
     setEditPlatform(platform);
     setIsEditModal(!isEditModal);
   };
 
-  const handleDeletePlatform = (platformId: string) => {
-    dispatch(deletePlatform(platformId));
+  const handleDeletePlatform = async (platformId: string) => {
+    const response = await deletePlatform(platformId);
+    if (response.data?.success === true) {
+      toast.success("Platform deleted successfully.");
+    } else {
+      toast.error("Failed to delete platform.");
+    }
   };
 
   console.log("all platforms", allPlatforms);

@@ -98,7 +98,7 @@ export function PlatformsTable({
             </TableHeader>
             <TableBody>
               {platforms.map((platform) => (
-                <TableRow key={platform.id}>
+                <TableRow key={platform._id}>
                   <TableCell className="font-medium">{platform.name}</TableCell>
                   <TableCell>
                     <Badge
@@ -113,10 +113,10 @@ export function PlatformsTable({
                     {formatCurrency(platform.hourlyRate)}
                   </TableCell>
                   <TableCell>
-                    {platform.nextPayData ? (
+                    {platform.nextPayDate ? (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatDate(platform.nextPayData)}</span>
+                        <span>{formatDate(platform.nextPayDate)}</span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">
@@ -148,7 +148,7 @@ export function PlatformsTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            onDeletePlatform && onDeletePlatform(platform.id)
+                            onDeletePlatform && onDeletePlatform(platform._id)
                           }
                           className="cursor-pointer text-destructive focus:text-destructive"
                         >

@@ -12,7 +12,7 @@ export type DayValue =
   | "sunday";
 
 export type Platform = {
-  id: string;
+  _id: string;
   name: string;
   paymentType: paymentType;
   hourlyRate: number;
