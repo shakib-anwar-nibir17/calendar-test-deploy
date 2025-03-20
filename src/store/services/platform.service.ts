@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { Platform, PlatformResponse } from "../states/platforms";
 
 export const platformApi = createApi({
   reducerPath: "platformApi",
@@ -6,37 +7,52 @@ export const platformApi = createApi({
   tagTypes: ["Platforms"],
 
   endpoints: (builder) => ({
+    // Fetch all platforms
     getPlatforms: builder.query({
       query: () => "",
       providesTags: ["Platforms"],
+      transformResponse: (response) => {
+        console.log("Fetched platforms:", response);
+        return response;
+      },
     }),
 
+    // Fetch a single platform by ID
     getPlatformById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `${id}`,
       providesTags: (result, error, id) => [{ type: "Platforms", id }],
     }),
 
-    createPlatform: builder.mutation({
+    // Create a new platform
+    createPlatform: builder.mutation<PlatformResponse, Omit<Platform, "id">>({
       query: (newPlatform) => ({
         url: "",
         method: "POST",
-        body: newPlatform,
+        body: JSON.stringify(newPlatform),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
       invalidatesTags: ["Platforms"],
     }),
 
+    // Update an existing platform
     updatePlatform: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `/${id}`,
+        url: `${id}`,
         method: "PUT",
-        body: updates,
+        body: JSON.stringify(updates),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Platforms", id }],
     }),
 
+    // Delete a platform
     deletePlatform: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Platforms"],

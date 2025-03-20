@@ -16,7 +16,7 @@ export type Platform = {
   name: string;
   paymentType: paymentType;
   hourlyRate: number;
-  nextPayData: string;
+  nextPayDate?: string;
   day?: DayValue;
   events?: CalendarEvent[];
 };
@@ -24,3 +24,16 @@ export type Platform = {
 export type PlatformsState = {
   platforms: Platform[];
 };
+
+export interface PlatformResponse {
+  success: boolean;
+  code: number;
+  data: {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  message?: string;
+}
