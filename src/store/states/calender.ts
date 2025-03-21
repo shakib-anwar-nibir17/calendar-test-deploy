@@ -3,13 +3,14 @@ import { Platform } from "./platforms";
 export interface CalendarEvent {
   id: string;
   platform: Platform["name"];
-  start: Date;
-  end: Date;
-  color?: string;
+  start: string;
+  end: string;
+  backgroundColor?: string;
   displayStart?: Date;
   displayEnd?: Date;
-  hoursEngaged?: number;
+  hoursEngaged: number;
   status: "active" | "completed" | "create";
+  allDay: boolean;
   timeZone: string;
   createdAt?: string;
   updatedAt?: string;
