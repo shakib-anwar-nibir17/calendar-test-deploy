@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   format,
   differenceInMinutes,
@@ -22,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CalendarEvent } from "@/store/states/calender";
 import { getUpcomingAndRecentEvents } from "@/utils/event-filter";
+import { useGetEventsQuery } from "@/store/services/calendar-event.service";
 
 // Types
 // Helper function to format date display
@@ -60,51 +60,17 @@ const getStatusColor = (status: CalendarEvent["status"]) => {
 };
 
 export function RecentActivity() {
-  const [comingEvents, setComingEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: events, isLoading, error } = useGetEventsQuery();
 
-  useEffect(() => {
-    // Simulate a small loading delay for better UX
-    const timer = setTimeout(() => {
-      const storedEvents = localStorage.getItem("calendarEvents") ?? "[]";
-      let parsedEvents: CalendarEvent[] = [];
-
-      try {
-        // Parse the events and convert string dates to Date objects
-        parsedEvents = JSON.parse(storedEvents, (key, value) => {
-          if (
-            key === "start" ||
-            key === "end" ||
-            key === "displayStart" ||
-            key === "displayEnd"
-          ) {
-            return value ? new Date(value) : null;
-          }
-          return value;
-        });
-      } catch (error) {
-        console.error("Error parsing calendar events:", error);
-      }
-
-      if (parsedEvents.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Sort upcoming events by start date
-      const { recentCompleted } = getUpcomingAndRecentEvents(parsedEvents);
-      const sortedEvents = [...recentCompleted].sort(
+  // Process and sort events
+  const sortedEvents = events?.events.length
+    ? getUpcomingAndRecentEvents(events.events).recentCompleted.sort(
         (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
-      );
+      )
+    : [];
 
-      setComingEvents(sortedEvents);
-      setIsLoading(false);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, []); // ✅ Runs only on mount
-
-  console.log(comingEvents);
+  if (isLoading) return <p>Loading events...</p>;
+  if (error) return <p>Error loading events.</p>;
 
   return (
     <Card>
@@ -132,11 +98,11 @@ export function RecentActivity() {
                 ))}
               </div>
             );
-          } else if (comingEvents.length > 0) {
+          } else if (sortedEvents.length > 0) {
             return (
               <ScrollArea className=" pr-4">
                 <div className="space-y-4">
-                  {comingEvents.map((event, index) => {
+                  {sortedEvents.map((event, index) => {
                     return (
                       <div key={event.id} className="group">
                         <div className="flex items-start gap-3">
@@ -169,7 +135,7 @@ export function RecentActivity() {
                             </p>
                           </div>
                         </div>
-                        {index < comingEvents.length - 1 && (
+                        {index < sortedEvents.length - 1 && (
                           <Separator className="mt-4" />
                         )}
                       </div>
@@ -193,11 +159,11 @@ export function RecentActivity() {
         })()}
       </CardContent>
 
-      {comingEvents.length > 0 && (
+      {sortedEvents.length > 0 && (
         <CardFooter className="border-t pt-4 flex justify-between">
           <p className="text-xs text-muted-foreground">
-            {comingEvents.length} recent{" "}
-            {comingEvents.length === 1 ? "class" : "classes"}
+            {sortedEvents.length} recent{" "}
+            {sortedEvents.length === 1 ? "class" : "classes"}
           </p>
         </CardFooter>
       )}
