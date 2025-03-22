@@ -57,19 +57,23 @@ export default function Calendar() {
 
   // Handle event click for editing
   const handleEventClick = (clickInfo: EventClickArg) => {
-    setModalMode("edit");
-    setSelectedEvent({
-      id: clickInfo.event.id,
-      platform: clickInfo.event.extendedProps.platform,
-      hoursEngaged: clickInfo.event.extendedProps.hoursEngaged,
-      status: clickInfo.event.extendedProps.status,
-      timeZone: clickInfo.event.extendedProps.timeZone,
-      backgroundColor: clickInfo.event.backgroundColor,
-      start: clickInfo.event.startStr,
-      end: clickInfo.event.endStr,
-      allDay: clickInfo.event.allDay,
-    });
-    setIsModalOpen(true);
+    if (clickInfo.event.extendedProps.status === "completed") {
+      return toast.error("You cannot edit a completed event.");
+    } else {
+      setModalMode("edit");
+      setSelectedEvent({
+        id: clickInfo.event.id,
+        platform: clickInfo.event.extendedProps.platform,
+        hoursEngaged: clickInfo.event.extendedProps.hoursEngaged,
+        status: clickInfo.event.extendedProps.status,
+        timeZone: clickInfo.event.extendedProps.timeZone,
+        backgroundColor: clickInfo.event.backgroundColor,
+        start: clickInfo.event.startStr,
+        end: clickInfo.event.endStr,
+        allDay: clickInfo.event.allDay,
+      });
+      setIsModalOpen(true);
+    }
   };
 
   // Handle event drag and resize
