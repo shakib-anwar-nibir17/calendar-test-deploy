@@ -102,20 +102,30 @@ export function PlatformsTable({
                       {platform.paymentType.replace("-", " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="flex items-center gap-1">
+                  <TableCell className="flex items-center gap-1 text-md mt-2">
                     {formatCurrency(platform.hourlyRate)}
                   </TableCell>
                   <TableCell>
-                    {platform.nextPayDate ? (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatDate(platform.nextPayDate)}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {platform.day ? platform.day : "Not Scheduled"}
-                      </span>
-                    )}
+                    {(() => {
+                      if (platform.paymentType === "Upfront") {
+                        return (
+                          <span className="text-muted-foreground">Upfront</span>
+                        );
+                      }
+                      if (platform.nextPayDate) {
+                        return (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatDate(platform.nextPayDate)}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <span className="text-muted-foreground">
+                          {platform.day ? platform.day : "Not Scheduled"}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
