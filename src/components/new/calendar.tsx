@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { CurrentTime } from "./current-time";
 import { TimeZoneSelector } from "./time-zone-selector";
+import { CustomEventContent } from "./custom-event-content";
 
 export default function Calendar() {
   const { data: events, isLoading, refetch, isError } = useGetEventsQuery();
@@ -191,6 +192,7 @@ export default function Calendar() {
           eventChange={handleEventChange}
           height="auto"
           timeZone={currentTimeZone} // Use the selected time zone
+          eventContent={(eventInfo) => CustomEventContent(eventInfo)}
         />
       </div>
 
