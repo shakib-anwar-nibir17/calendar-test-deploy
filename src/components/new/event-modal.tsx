@@ -56,7 +56,7 @@ export function EventModal({
     status: "create",
     timeZone: "UTC",
   });
-  const [updateEvent, { isLoading }] = useUpdateEventMutation();
+  const [updateEvent] = useUpdateEventMutation();
   const [platform, setPlatform] = useState<Platform["name"]>("");
   const [totalHoursEngaged, setTotalHoursEngaged] = useState<number>(
     event?.hoursEngaged ?? 0
@@ -135,6 +135,8 @@ export function EventModal({
       backgroundColor: "#A0C878",
     });
     console.log("response", response);
+    refetch();
+    onClose();
   };
 
   return (
