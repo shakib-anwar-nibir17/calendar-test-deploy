@@ -1,21 +1,25 @@
+/**
+ * Utility functions to filter calendar events
+ */
+
 import { CalendarEvent } from "@/store/states/calender";
 
-export const getUpcomingAndRecentEvents = (events: CalendarEvent[]) => {
-  const now = new Date();
+/**
+ * Filters calendar events to find upcoming classes (status: "create")
+ * @param events Array of calendar events to filter
+ * @returns Array of upcoming calendar events
+ */
+export const getUpcomingClasses = (
+  events: CalendarEvent[]
+): CalendarEvent[] => {
+  return events.filter((event) => event.status === "create");
+};
 
-  // Filter upcoming events (only active events)
-  const upcoming = events
-    .filter((event) => new Date(event.start) > now && event.status === "active")
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-    .slice(0, 3);
-
-  // Filter recent completed events
-  const recentCompleted = events
-    .filter(
-      (event) => new Date(event.end) < now && event.status === "completed"
-    )
-    .sort((a, b) => new Date(b.end).getTime() - new Date(a.end).getTime())
-    .slice(0, 3);
-
-  return { upcoming, recentCompleted };
+/**
+ * Filters calendar events to find recent classes (status: "completed")
+ * @param events Array of calendar events to filter
+ * @returns Array of completed calendar events
+ */
+export const getRecentClasses = (events: CalendarEvent[]): CalendarEvent[] => {
+  return events.filter((event) => event.status === "completed");
 };

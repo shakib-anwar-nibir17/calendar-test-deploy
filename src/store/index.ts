@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import sidebarReducer from "./slices/sidebar.slice";
 import { timeZoneApi } from "./services/time-zone.service";
 import { platformApi } from "./services/platform.service";
-import { calendarEventApi } from "./services/calendar-event.service";
+import { eventsApi as calendarEventApi } from "./services/calendar-event.service";
 
 export const makeStore = () => {
   return configureStore({

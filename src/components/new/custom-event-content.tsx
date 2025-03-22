@@ -1,0 +1,28 @@
+"use client";
+
+import { EventContentArg } from "@fullcalendar/core";
+import { format } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+
+export const CustomEventContent = (
+  eventInfo: EventContentArg,
+  currentTimeZone: string
+) => {
+  // Convert the start time to the current time zone if available.
+  const zonedDate = eventInfo.event.start
+    ? toZonedTime(eventInfo.event.start, currentTimeZone)
+    : null;
+
+  return (
+    <div
+      style={{ backgroundColor: eventInfo.event.backgroundColor }}
+      className="p-1 text-white rounded-md shadow-md w-full"
+    >
+      <p className="text-sm font-semibold">
+        {zonedDate ? format(zonedDate, "h:mm a") : ""}
+      </p>
+      <p className="text-xs">{eventInfo.event.extendedProps.platform}</p>
+      <p className="text-xs">{eventInfo.event.extendedProps.hoursEngaged}</p>
+    </div>
+  );
+};

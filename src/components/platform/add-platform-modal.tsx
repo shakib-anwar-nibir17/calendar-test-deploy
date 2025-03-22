@@ -58,7 +58,10 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
       name: name,
       paymentType: paymentType,
       hourlyRate: hourlyRate,
-      nextPayDate: nextPayData,
+      nextPayDate:
+        paymentType === "Monthly" || paymentType === "Bi-Weekly"
+          ? nextPayData
+          : "",
       day: day,
     };
 
@@ -76,8 +79,6 @@ export function AddPlatformModal({ isOpen, onClose }: AddPlatformModalProps) {
 
     onClose();
   };
-
-  console.log(date);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

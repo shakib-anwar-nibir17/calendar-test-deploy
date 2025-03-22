@@ -1,46 +1,61 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { CalendarEvent, CalendarEventResponse } from "../states/calender";
+"use client";
 
-export const calendarEventApi = createApi({
-  reducerPath: "calendarEventApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }), // ✅ Matches Next.js API routes
-  tagTypes: ["Events"], // ✅ Only keeps relevant tag
+import { fetchTimeApiEvents } from "@/lib/services/timeApi";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { CalendarEvent as Event } from "../states/calender";
+
+export const eventsApi = createApi({
+  reducerPath: "eventsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+  tagTypes: ["Events"],
 
   endpoints: (builder) => ({
-    getEvents: builder.query<CalendarEventResponse, void>({
-      query: () => "/calendar-events", // ✅ Matches API structure
+    getEvents: builder.query<{ events: Event[] }, void>({
+      queryFn: async () => {
+        try {
+          const response = await fetch("/api/events");
+          if (!response.ok) {
+            throw new Error("Failed to fetch database events");
+          }
+          const dbEvents: Event[] = await response.json();
+
+          const timeApiEvents = await fetchTimeApiEvents();
+          const allEvents = [...dbEvents, ...timeApiEvents];
+
+          return { data: { events: allEvents } };
+        } catch (error) {
+          return { error: { status: "FETCH_ERROR", error: String(error) } };
+        }
+      },
       providesTags: ["Events"],
     }),
 
-    getEventById: builder.query({
-      query: (id) => `/calendar-events/${id}`,
+    getEventById: builder.query<Event, string>({
+      query: (id) => `/events/${id}`,
       providesTags: (result, error, id) => [{ type: "Events", id }],
     }),
 
-    createEvent: builder.mutation<
-      CalendarEventResponse,
-      Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">
-    >({
+    createEvent: builder.mutation<Event, Omit<Event, "id">>({
       query: (newEvent) => ({
-        url: "/calendar-events",
+        url: "/events",
         method: "POST",
         body: newEvent,
       }),
       invalidatesTags: ["Events"],
     }),
 
-    updateEvent: builder.mutation({
+    updateEvent: builder.mutation<Event, Partial<Event> & { id: string }>({
       query: ({ id, ...updates }) => ({
-        url: `/calendar-events/${id}`,
+        url: `/events/${id}`,
         method: "PUT",
         body: updates,
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Events", id }],
     }),
 
-    deleteEvent: builder.mutation({
+    deleteEvent: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/calendar-events/${id}`,
+        url: `/events/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, id) => [{ type: "Events", id }],
@@ -54,4 +69,4 @@ export const {
   useCreateEventMutation,
   useUpdateEventMutation,
   useDeleteEventMutation,
-} = calendarEventApi;
+} = eventsApi;

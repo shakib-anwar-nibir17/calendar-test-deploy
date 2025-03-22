@@ -3,9 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "@/store/store-provider";
 import { ThemeProvider } from "next-themes";
-import { TimeZoneProvider } from "@/components/schedule/time-zone-context";
 import { Toaster } from "sonner";
 import { connectToMongoDB } from "@/lib/mongodb";
+import { TimeZoneProvider } from "@/contexts/time-zone-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

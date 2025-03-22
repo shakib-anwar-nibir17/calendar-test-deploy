@@ -26,16 +26,18 @@ import {
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { extractPlatformStatistics } from "@/utils/platform-statistics";
-import { getFromLocalStorage } from "@/utils/local-storage";
-import { CalendarEvent } from "@/store/states/calender";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
+import { useGetEventsQuery } from "@/store/services/calendar-event.service";
 
 // Mock data for platforms
 
 export default function StatsCards() {
   const { data: platforms } = useGetPlatformsQuery();
-  const events = getFromLocalStorage<CalendarEvent[]>("calendarEvents") || [];
-  const stats = extractPlatformStatistics(events, platforms?.data || []);
+  const { data: events } = useGetEventsQuery();
+  const stats = extractPlatformStatistics(
+    events?.events || [],
+    platforms?.data || []
+  );
 
   console.log(stats);
 
@@ -72,7 +74,7 @@ export default function StatsCards() {
                 </span>
               </div>
               <span className="text-3xl font-bold">
-                {stats.platforms.length}
+                {platforms?.data?.length}
               </span>
             </div>
 
