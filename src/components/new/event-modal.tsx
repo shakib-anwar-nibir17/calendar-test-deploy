@@ -22,6 +22,7 @@ import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
 import HourMinuteInput from "@/components/ui/hour-minute";
+import { toZonedTime } from "date-fns-tz";
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -64,8 +65,8 @@ export function EventModal({
     if (event) {
       setFormData({
         id: event.id || "",
-        platform: event.platform || "",
-        start: event.start || "",
+        platform: event.platform || platform,
+        start: toZonedTime(event.start, timeZone).toISOString() || "",
         end:
           event.end || event.start
             ? format(
@@ -83,7 +84,7 @@ export function EventModal({
         backgroundColor: event.backgroundColor ?? "#3788d8",
       });
     }
-  }, [event, totalHoursEngaged]);
+  }, [event, totalHoursEngaged, platform]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -157,6 +158,8 @@ export function EventModal({
     }
   };
 
+  console.log(event);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -174,7 +177,7 @@ export function EventModal({
                   options={platforms?.data ?? []}
                   getOptionLabel={(p: Platform) => p.name}
                   getOptionValue={(p: Platform) => p.name}
-                  value={platform}
+                  value={event.platform}
                   onChange={(platform) => setPlatform(platform)}
                   className="w-full"
                 />

@@ -155,7 +155,7 @@ export default function Calendar() {
                 setModalMode("add");
                 setSelectedEvent({
                   id: "",
-                  platform: "math",
+                  platform: "",
                   hoursEngaged: 0,
                   status: "create",
                   timeZone: currentTimeZone,
@@ -176,6 +176,7 @@ export default function Calendar() {
       <div className="rounded-lg border shadow-sm">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          key={currentTimeZone}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
@@ -192,7 +193,9 @@ export default function Calendar() {
           eventChange={handleEventChange}
           height="auto"
           timeZone={currentTimeZone} // Use the selected time zone
-          eventContent={(eventInfo) => CustomEventContent(eventInfo)}
+          eventContent={(eventInfo) =>
+            CustomEventContent(eventInfo, currentTimeZone)
+          }
         />
       </div>
 
