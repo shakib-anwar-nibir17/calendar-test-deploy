@@ -208,6 +208,7 @@ export default function Calendar() {
           onDelete={handleDeleteEvent}
           mode={modalMode}
           timeZone={currentTimeZone}
+          refetch={refetch}
         />
       )}
     </div>

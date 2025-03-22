@@ -15,14 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addHours, format, parseISO } from "date-fns";
-import { convertTimeZone } from "@/lib/services/timeApi";
-import { Loader2 } from "lucide-react";
 import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
 import HourMinuteInput from "@/components/ui/hour-minute";
 import { toZonedTime } from "date-fns-tz";
+import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -32,6 +31,7 @@ interface EventModalProps {
   readonly onDelete: (id: string) => void;
   readonly mode: "add" | "edit";
   readonly timeZone: string;
+  readonly refetch: () => void;
 }
 
 export function EventModal({
@@ -42,6 +42,7 @@ export function EventModal({
   onDelete,
   mode,
   timeZone,
+  refetch,
 }: EventModalProps) {
   const { data: platforms } = useGetPlatformsQuery();
   const [formData, setFormData] = useState<CalendarEvent>({
@@ -55,7 +56,7 @@ export function EventModal({
     status: "create",
     timeZone: "UTC",
   });
-  const [isConverting, setIsConverting] = useState(false);
+  const [updateEvent, { isLoading }] = useUpdateEventMutation();
   const [platform, setPlatform] = useState<Platform["name"]>("");
   const [totalHoursEngaged, setTotalHoursEngaged] = useState<number>(
     event?.hoursEngaged ?? 0
@@ -84,7 +85,7 @@ export function EventModal({
         backgroundColor: event.backgroundColor ?? "#3788d8",
       });
     }
-  }, [event, totalHoursEngaged, platform]);
+  }, [event, totalHoursEngaged, platform, timeZone]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -121,44 +122,20 @@ export function EventModal({
     }
   };
 
-  // Function to convert event times to a different time zone
-  const convertEventTimeZone = async (targetTimeZone: string) => {
-    if (formData.allDay) return; // No need to convert all-day events
-
-    try {
-      setIsConverting(true);
-
-      // Convert start time
-      const startResult = await convertTimeZone(
-        formData.start,
-        timeZone,
-        targetTimeZone
-      );
-
-      // Convert end time
-      const endResult = await convertTimeZone(
-        formData.end,
-        timeZone,
-        targetTimeZone
-      );
-
-      setFormData((prev) => ({
-        ...prev,
-        start: startResult.dateTime,
-        end: endResult.dateTime,
-      }));
-
-      // Show success message
-      alert(`Event times converted to ${targetTimeZone} time zone`);
-    } catch (error) {
-      console.error("Failed to convert time zone:", error);
-      alert("Failed to convert time zone. Please try again.");
-    } finally {
-      setIsConverting(false);
-    }
+  const handleStatusCheckboxChange = async (checked: boolean) => {
+    if (formData.status === "completed") return;
+    console.log("initial form Data", formData);
+    setFormData((prev) => ({
+      ...prev,
+      status: checked ? "completed" : "create",
+    }));
+    const response = await updateEvent({
+      id: formData.id,
+      status: "completed",
+      backgroundColor: "#A0C878",
+    });
+    console.log("response", response);
   };
-
-  console.log(event);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -223,34 +200,16 @@ export function EventModal({
               />
             </div>
 
-            {!formData.allDay && mode === "edit" && (
+            {mode === "edit" && (
               <div className="grid gap-2">
-                <Label>Time Zone Conversion</Label>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => convertEventTimeZone("UTC")}
-                    disabled={isConverting || timeZone === "UTC"}
-                  >
-                    {isConverting ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    Convert to UTC
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => convertEventTimeZone("America/New_York")}
-                    disabled={isConverting || timeZone === "America/New_York"}
-                  >
-                    {isConverting ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    Convert to EST
-                  </Button>
+                  <Checkbox
+                    id="status"
+                    checked={formData.status === "completed"}
+                    onCheckedChange={handleStatusCheckboxChange}
+                    disabled={formData.status === "completed"}
+                  />
+                  <Label htmlFor="allDay">Mark as Complete</Label>
                 </div>
               </div>
             )}
