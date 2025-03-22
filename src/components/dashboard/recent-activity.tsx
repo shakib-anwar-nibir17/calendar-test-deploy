@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CalendarEvent } from "@/store/states/calender";
-import { getUpcomingAndRecentEvents } from "@/utils/event-filter";
+import { getRecentClasses } from "@/utils/event-filter";
 import { useGetEventsQuery } from "@/store/services/calendar-event.service";
 
 // Types
@@ -63,11 +63,8 @@ export function RecentActivity() {
   const { data: events, isLoading, error } = useGetEventsQuery();
 
   // Process and sort events
-  const sortedEvents = events?.events.length
-    ? getUpcomingAndRecentEvents(events.events).recentCompleted.sort(
-        (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
-      )
-    : [];
+  const sortedEvents = getRecentClasses(events?.events || []);
+  console.log(sortedEvents);
 
   if (isLoading) return <p>Loading events...</p>;
   if (error) return <p>Error loading events.</p>;
@@ -102,7 +99,7 @@ export function RecentActivity() {
             return (
               <ScrollArea className=" pr-4">
                 <div className="space-y-4">
-                  {sortedEvents.map((event, index) => {
+                  {sortedEvents.map((event: CalendarEvent, index: number) => {
                     return (
                       <div key={event.id} className="group">
                         <div className="flex items-start gap-3">
