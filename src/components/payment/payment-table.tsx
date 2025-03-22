@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useGetEventsQuery } from "@/store/services/calendar-event.service";
 
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { CalendarEvent } from "@/store/states/calender";
@@ -33,30 +34,26 @@ const calculateTotalPay = (hours: number, rate: number) => {
 
 export default function PaymentsPage() {
   const { data: platforms } = useGetPlatformsQuery();
+  const { data: events } = useGetEventsQuery();
 
   const [payments, setPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    if (!platforms) return;
+    if (!platforms?.data || !events?.events) return;
 
-    const storedPayments = localStorage.getItem("calendarEvents");
-    if (storedPayments) {
-      const parsedPayments: CalendarEvent[] = JSON.parse(storedPayments);
+    const newData = events?.events
+      .filter((payment) => payment.status === "completed")
+      .map((payment) => {
+        const platform = platforms.data?.find(
+          (p) => p.name === payment.platform
+        );
 
-      const newData = parsedPayments
-        .filter((payment) => payment.status === "completed")
-        .map((payment) => {
-          const platform = platforms.data?.find(
-            (p) => p.name === payment.platform
-          );
+        return platform ? { calenderEvent: payment, platform } : null;
+      })
+      .filter((item): item is Payment => item !== null);
 
-          return platform ? { calenderEvent: payment, platform } : null;
-        })
-        .filter((item): item is Payment => item !== null);
-
-      setPayments(newData);
-    }
-  }, [platforms]);
+    setPayments(newData);
+  }, [platforms, events]);
 
   return (
     <div className="container mx-auto py-10">
@@ -68,7 +65,6 @@ export default function PaymentsPage() {
               <TableHead className="text-left">Payment ID</TableHead>
               <TableHead className="text-right">Hourly Rate</TableHead>
               <TableHead className="text-right">Hours Engaged</TableHead>
-              <TableHead>Platform</TableHead>
               <TableHead className="text-right">Total Pay</TableHead>
             </TableRow>
           )}
@@ -77,14 +73,13 @@ export default function PaymentsPage() {
           {payments.length > 0 ? (
             payments.map((payment) => (
               <TableRow key={payment.calenderEvent.id}>
-                <TableCell>{payment.calenderEvent.id}</TableCell>
+                <TableCell>{payment.calenderEvent.platform}</TableCell>
                 <TableCell className="text-right font-medium">
                   {formatCurrency(payment.platform.hourlyRate)}
                 </TableCell>
                 <TableCell className="text-right">
                   {payment.calenderEvent.hoursEngaged?.toFixed(2)}
                 </TableCell>
-                <TableCell>{payment.calenderEvent.platform}</TableCell>
                 <TableCell className="text-right font-medium">
                   {calculateTotalPay(
                     payment.calenderEvent.hoursEngaged ?? 0,
