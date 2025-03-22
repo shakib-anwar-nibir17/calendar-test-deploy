@@ -19,10 +19,24 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const timeZoneList = [
+  "America/New_York", // Eastern Time
+  "Asia/Dhaka", // Bangladesh Time
+  "Asia/Shanghai", // Beijing Time
+  "America/Los_Angeles", // Pacific Time
+  "America/Chicago", // Central Time
+  "Asia/Kolkata", // Indian Time
+];
+
 export function TimeZoneSelector() {
   const { currentTimeZone, availableTimeZones, setCurrentTimeZone, isLoading } =
     useTimeZone();
   const [open, setOpen] = useState(false);
+
+  // Filter available time zones
+  const filteredTimeZones = availableTimeZones.filter((tz) =>
+    timeZoneList.includes(tz)
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -44,7 +58,7 @@ export function TimeZoneSelector() {
           <CommandList>
             <CommandEmpty>No time zone found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-y-auto">
-              {availableTimeZones.map((timeZone) => (
+              {filteredTimeZones.map((timeZone) => (
                 <CommandItem
                   key={timeZone}
                   value={timeZone}
