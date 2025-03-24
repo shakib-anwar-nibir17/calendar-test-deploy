@@ -94,9 +94,9 @@ export function EventModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, allDay: checked }));
-  };
+  // const handleCheckboxChange = (checked: boolean) => {
+  //   setFormData((prev) => ({ ...prev, allDay: checked }));
+  // };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,14 +182,14 @@ export function EventModal({
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <Checkbox
                 id="allDay"
                 checked={formData.allDay}
                 onCheckedChange={handleCheckboxChange}
               />
               <Label htmlFor="allDay">All Day</Label>
-            </div>
+            </div> */}
 
             <div className="grid gap-2">
               <Label htmlFor="backgroundColor">Color</Label>
