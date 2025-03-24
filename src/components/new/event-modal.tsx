@@ -94,10 +94,6 @@ export function EventModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // const handleCheckboxChange = (checked: boolean) => {
-  //   setFormData((prev) => ({ ...prev, allDay: checked }));
-  // };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -138,8 +134,6 @@ export function EventModal({
     refetch();
     onClose();
   };
-
-  console.log("form data", platform);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
