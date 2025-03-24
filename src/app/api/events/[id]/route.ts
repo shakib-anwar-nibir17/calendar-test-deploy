@@ -134,10 +134,20 @@ export async function PUT(
 // DELETE a specific event
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params?: { id?: string } }
 ) {
   try {
     await connectToMongoDB();
+
+    // Explicitly await context if necessary (though this is uncommon)
+    const params = context?.params;
+
+    if (!params?.id) {
+      return NextResponse.json(
+        { error: "Event ID is required" },
+        { status: 400 }
+      );
+    }
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(

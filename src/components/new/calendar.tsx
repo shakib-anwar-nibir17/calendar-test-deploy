@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { CurrentTime } from "./current-time";
 import { TimeZoneSelector } from "./time-zone-selector";
 import { CustomEventContent } from "./custom-event-content";
+import DeleteConfirmation from "./deleteModal";
 
 export default function Calendar() {
   const { data: events, isLoading, refetch, isError } = useGetEventsQuery();
@@ -35,6 +36,8 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent>(
     {} as CalendarEvent
   );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const { currentTimeZone } = useTimeZone();
 
@@ -58,7 +61,7 @@ export default function Calendar() {
   // Handle event click for editing
   const handleEventClick = (clickInfo: EventClickArg) => {
     if (clickInfo.event.extendedProps.status === "completed") {
-      return toast.error("You cannot edit a completed event.");
+      return setIsDeleteModalOpen(true);
     } else {
       setModalMode("edit");
       setSelectedEvent({
@@ -213,6 +216,14 @@ export default function Calendar() {
           mode={modalMode}
           timeZone={currentTimeZone}
           refetch={refetch}
+        />
+      )}
+      {isDeleteModalOpen && (
+        <DeleteConfirmation
+          open={isDeleteModalOpen}
+          onOpenChange={setIsDeleteModalOpen}
+          onDelete={() => handleDeleteEvent(selectedEvent.id)}
+          id={selectedEvent.id}
         />
       )}
     </div>

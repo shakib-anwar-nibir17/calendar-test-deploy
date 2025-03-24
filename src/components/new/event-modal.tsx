@@ -94,10 +94,6 @@ export function EventModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // const handleCheckboxChange = (checked: boolean) => {
-  //   setFormData((prev) => ({ ...prev, allDay: checked }));
-  // };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -156,7 +152,7 @@ export function EventModal({
                   options={platforms?.data ?? []}
                   getOptionLabel={(p: Platform) => p.name}
                   getOptionValue={(p: Platform) => p.name}
-                  value={event.platform}
+                  value={platform}
                   onChange={(platform) => setPlatform(platform)}
                   className="w-full"
                 />
