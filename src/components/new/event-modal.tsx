@@ -139,6 +139,8 @@ export function EventModal({
     onClose();
   };
 
+  console.log("form data", platform);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -156,7 +158,7 @@ export function EventModal({
                   options={platforms?.data ?? []}
                   getOptionLabel={(p: Platform) => p.name}
                   getOptionValue={(p: Platform) => p.name}
-                  value={event.platform}
+                  value={platform}
                   onChange={(platform) => setPlatform(platform)}
                   className="w-full"
                 />
