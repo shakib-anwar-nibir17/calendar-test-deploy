@@ -19,6 +19,13 @@ interface TimeInputProps {
   readonly disabled?: boolean;
 }
 
+const timeOptions = [
+  { label: "30 mins", value: 0.5 },
+  { label: "45 mins", value: 0.75 },
+  { label: "1 Hour", value: 1 },
+  { label: "2 Hours", value: 2 },
+];
+
 export default function HourSelectInput({
   onChange,
   className,
@@ -37,7 +44,7 @@ export default function HourSelectInput({
 
   return (
     <div className={cn("flex flex-col space-y-2", className)}>
-      <Label>Select Hours</Label>
+      <Label>Select Time</Label>
       <Select
         onValueChange={handleChange}
         defaultValue={String(defaultTotal)}
@@ -45,13 +52,14 @@ export default function HourSelectInput({
       >
         <SelectTrigger>
           <SelectValue>
-            {hours ? `${hours} Hour${hours > 1 ? "s" : ""}` : "Select hours"}
+            {timeOptions.find((option) => option.value === hours)?.label ??
+              "Select time"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {[1, 2, 3, 4, 5].map((hour) => (
-            <SelectItem key={hour} value={String(hour)}>
-              {hour} Hour{hour > 1 ? "s" : ""}
+          {timeOptions.map((option) => (
+            <SelectItem key={option.value} value={String(option.value)}>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>

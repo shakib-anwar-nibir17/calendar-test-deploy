@@ -22,7 +22,10 @@ export const CustomEventContent = (
         {zonedDate ? format(zonedDate, "h:mm a") : ""}
       </p>
       <p className="text-xs">{eventInfo.event.extendedProps.platform}</p>
-      <p className="text-xs">{eventInfo.event.extendedProps.hoursEngaged}</p>
+      <p className="text-xs">
+        <strong>HOURS ENGAGED:</strong>{" "}
+        {eventInfo.event.extendedProps.hoursEngaged} Hours
+      </p>
     </div>
   );
 };
