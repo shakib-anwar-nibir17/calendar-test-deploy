@@ -17,7 +17,7 @@ interface StandaloneSelectProps<T> {
   readonly helperText?: string;
   readonly options: T[];
   readonly getOptionLabel: (option: T) => string;
-  readonly getOptionValue: (option: T) => string;
+  readonly getOptionValue: (option: T) => string | number;
   readonly value?: string;
   readonly onChange?: (value: string) => void;
   readonly className?: string;
@@ -57,7 +57,7 @@ export function SelectMenu<T>({
           {options.map((option, index) => (
             <SelectItem
               key={`${getOptionValue(option)}-${index}`}
-              value={getOptionValue(option)}
+              value={String(getOptionValue(option))}
             >
               {getOptionLabel(option)}
             </SelectItem>

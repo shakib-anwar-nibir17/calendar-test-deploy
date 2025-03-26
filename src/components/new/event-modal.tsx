@@ -19,9 +19,15 @@ import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
-import HourMinuteInput from "@/components/ui/hour-minute";
 import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
 import { toZonedTime } from "date-fns-tz";
+
+const hoursEngagedOptions = [
+  { value: 0.5, label: "30 minutes" },
+  { value: 0.75, label: "45 minutes" },
+  { value: 1, label: "1 hour" },
+  { value: 2, label: "2 hours" },
+];
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -66,28 +72,22 @@ export function EventModal({
   };
 
   const [updateEvent] = useUpdateEventMutation();
-  const [platform, setPlatform] = useState<Platform["name"]>(
-    event.platform || ""
-  );
-  const [totalHoursEngaged, setTotalHoursEngaged] = useState<number>(
-    event?.hoursEngaged ?? 0
-  );
 
   useEffect(() => {
     if (event) {
       setFormData({
         id: event.id || "",
-        platform: event.platform || platform,
+        platform: event.platform || "",
         start: toZonedTime(event.start, timeZone).toISOString() || "",
         end: toZonedTime(event.end, timeZone).toISOString() || "",
         allDay: event.allDay || false,
-        hoursEngaged: event.hoursEngaged || totalHoursEngaged,
+        hoursEngaged: event.hoursEngaged || 0,
         status: event.status || "create",
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
       });
     }
-  }, [event, totalHoursEngaged, platform, timeZone]);
+  }, [event, timeZone]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -125,6 +125,13 @@ export function EventModal({
     onClose();
   };
 
+  const handleHoursEngagedChange = (value: string) => {
+    setFormData({
+      ...formData,
+      hoursEngaged: Number(value),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -153,8 +160,10 @@ export function EventModal({
                   options={platforms?.data ?? []}
                   getOptionLabel={(p: Platform) => p.name}
                   getOptionValue={(p: Platform) => p.name}
-                  value={platform}
-                  onChange={(platform) => setPlatform(platform)}
+                  value={formData.platform}
+                  onChange={(platform) =>
+                    setFormData({ ...formData, platform })
+                  }
                   className="w-full"
                 />
               )}
@@ -172,11 +181,20 @@ export function EventModal({
               />
             </div>
 
-            <div className="grid gap-2">
-              <HourMinuteInput
-                defaultTotal={event.hoursEngaged}
-                onChange={(hours: number) => setTotalHoursEngaged(hours)}
+            <div className="grid gap-2 bg-white">
+              <SelectMenu
+                label="Hours Engaged"
+                options={hoursEngagedOptions}
+                value={formData.hoursEngaged.toString()}
+                onChange={handleHoursEngagedChange}
+                className="w-full"
+                getOptionLabel={(option) => option.label}
+                getOptionValue={(option) => option.value}
+                placeholder="Select an option"
               />
+              <p className="text-xs text-muted-foreground">
+                End time will be calculated automatically based on hours engaged
+              </p>
             </div>
 
             <div className="grid gap-2">
