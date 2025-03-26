@@ -18,6 +18,7 @@ interface DeleteConfirmationProps {
   readonly onOpenChange: (open: boolean) => void;
   readonly onDelete: (id: string) => void;
   readonly trigger?: React.ReactNode;
+  readonly setDeleteEventId: (id: string) => void;
 }
 
 export default function DeleteConfirmation({
@@ -26,6 +27,7 @@ export default function DeleteConfirmation({
   onOpenChange,
   onDelete,
   trigger,
+  setDeleteEventId,
 }: DeleteConfirmationProps) {
   const handleDelete = (id: string) => {
     onDelete(id);
@@ -45,7 +47,9 @@ export default function DeleteConfirmation({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setDeleteEventId("")}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => handleDelete(id)}
             className="bg-destructive text-white hover:bg-destructive/90"
