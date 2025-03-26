@@ -21,7 +21,7 @@ import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
 import HourMinuteInput from "@/components/ui/hour-minute";
 import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
-import { toZonedTime } from "date-fns-tz"; // Add this library
+import { toZonedTime } from "date-fns-tz";
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -60,15 +60,11 @@ export function EventModal({
   const calculateEndTime = (start: string, hoursEngaged: number): string => {
     if (!start || hoursEngaged <= 0) return start;
 
-    // Parse start time as a Date object (UTC if start includes 'Z')
     const startDate = parseISO(start);
-
-    // Add the engaged time in minutes
     const endDate = addMinutes(startDate, hoursEngaged * 60);
-
-    // Convert to ISO string to maintain UTC ('Z' offset)
     return endDate.toISOString();
   };
+
   const [updateEvent] = useUpdateEventMutation();
   const [platform, setPlatform] = useState<Platform["name"]>(
     event.platform || ""
@@ -113,17 +109,18 @@ export function EventModal({
 
   const handleStatusCheckboxChange = async (checked: boolean) => {
     if (formData.status === "completed") return;
-    console.log("initial form Data", formData);
+
     setFormData((prev) => ({
       ...prev,
       status: checked ? "completed" : "create",
     }));
+
     const response = await updateEvent({
       id: formData.id,
       status: "completed",
       backgroundColor: "#A0C878",
     });
-    console.log("response", response);
+    if (response.error) return;
     refetch();
     onClose();
   };
@@ -131,18 +128,13 @@ export function EventModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Convert UTC times back to local for display/API (if needed)
     const endLocal = calculateEndTime(formData.start, formData.hoursEngaged);
-
-    console.log("endLocal", endLocal);
 
     onSubmit({
       ...formData,
       end: endLocal,
     });
   };
-
-  console.log("formData", formData);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
