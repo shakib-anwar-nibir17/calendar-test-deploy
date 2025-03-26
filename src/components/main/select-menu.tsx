@@ -42,7 +42,7 @@ export function SelectMenu<T>({
   error,
 }: StandaloneSelectProps<T>) {
   return (
-    <div className={cn("space-y-2 w-full", className)}>
+    <div className={cn("space-y-2 w-[300px]", className)}>
       {label && (
         <Label htmlFor={id} className="flex items-center gap-1">
           {label}

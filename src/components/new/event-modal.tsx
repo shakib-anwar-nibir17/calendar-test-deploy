@@ -81,7 +81,7 @@ export function EventModal({
         start: toZonedTime(event.start, timeZone).toISOString() || "",
         end: toZonedTime(event.end, timeZone).toISOString() || "",
         allDay: event.allDay || false,
-        hoursEngaged: event.hoursEngaged || 0,
+        hoursEngaged: event.hoursEngaged || 0.5,
         status: event.status || "create",
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
@@ -181,13 +181,13 @@ export function EventModal({
               />
             </div>
 
-            <div className="grid gap-2 bg-white">
+            <div className="grid gap-2 bg-white w-[300px]">
               <SelectMenu
                 label="Hours Engaged"
                 options={hoursEngagedOptions}
                 value={formData.hoursEngaged.toString()}
                 onChange={handleHoursEngagedChange}
-                className="w-full"
+                className="w-[300px]"
                 getOptionLabel={(option) => option.label}
                 getOptionValue={(option) => option.value}
                 placeholder="Select an option"
