@@ -14,7 +14,10 @@ export const CustomEventContent = (
     : null;
 
   return (
-    <div className="p-1 text-white rounded-md  w-full">
+    <div
+      style={{ backgroundColor: eventInfo.event.backgroundColor }}
+      className="p-1 text-white rounded-md w-full"
+    >
       <p className="text-sm font-semibold">
         {zonedDate ? format(zonedDate, "h:mm a") : ""}
       </p>
