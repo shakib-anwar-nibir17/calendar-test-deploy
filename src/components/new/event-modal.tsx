@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { addHours, addMinutes, format, parseISO } from "date-fns";
+import { addMinutes, format, parseISO } from "date-fns";
 import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
@@ -56,8 +56,23 @@ export function EventModal({
     status: "create",
     timeZone: "UTC",
   });
+
+  const calculateEndTime = (start: string, hoursEngaged: number): string => {
+    if (!start || hoursEngaged <= 0) return start;
+
+    // Parse start time as a Date object (UTC if start includes 'Z')
+    const startDate = parseISO(start);
+
+    // Add the engaged time in minutes
+    const endDate = addMinutes(startDate, hoursEngaged * 60);
+
+    // Convert to ISO string to maintain UTC ('Z' offset)
+    return endDate.toISOString();
+  };
   const [updateEvent] = useUpdateEventMutation();
-  const [platform, setPlatform] = useState<Platform["name"]>("");
+  const [platform, setPlatform] = useState<Platform["name"]>(
+    event.platform || ""
+  );
   const [totalHoursEngaged, setTotalHoursEngaged] = useState<number>(
     event?.hoursEngaged ?? 0
   );
@@ -68,16 +83,7 @@ export function EventModal({
         id: event.id || "",
         platform: event.platform || platform,
         start: toZonedTime(event.start, timeZone).toISOString() || "",
-        end:
-          event.end || event.start
-            ? format(
-                addHours(
-                  parseISO(event.start),
-                  event.hoursEngaged || totalHoursEngaged
-                ),
-                "yyyy-MM-dd'T'HH:mm"
-              )
-            : "",
+        end: toZonedTime(event.end, timeZone).toISOString() || "",
         allDay: event.allDay || false,
         hoursEngaged: event.hoursEngaged || totalHoursEngaged,
         status: event.status || "create",
@@ -122,19 +128,6 @@ export function EventModal({
     onClose();
   };
 
-  const calculateEndTime = (start: string, hoursEngaged: number): string => {
-    if (!start || hoursEngaged <= 0) return start;
-
-    // Parse start time as a Date object (UTC if start includes 'Z')
-    const startDate = parseISO(start);
-
-    // Add the engaged time in minutes
-    const endDate = addMinutes(startDate, hoursEngaged * 60);
-
-    // Convert to ISO string to maintain UTC ('Z' offset)
-    return endDate.toISOString();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -148,6 +141,8 @@ export function EventModal({
       end: endLocal,
     });
   };
+
+  console.log("formData", formData);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
