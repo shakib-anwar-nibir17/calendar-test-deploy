@@ -172,7 +172,7 @@ export default function Calendar() {
                   hoursEngaged: 0,
                   status: "create",
                   timeZone: currentTimeZone,
-                  backgroundColor: "#3b82f6",
+                  backgroundColor: "#ffff",
                   start: new Date().toISOString(),
                   end: new Date().toISOString(),
                   allDay: false,
