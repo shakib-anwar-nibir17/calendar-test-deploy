@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
     console.log("Received request:", data);
+    console.log("Received request:", data);
 
     await connectToMongoDB();
 

@@ -14,14 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { addHours, format, parseISO } from "date-fns";
+import { addHours, addMinutes, format, parseISO } from "date-fns";
 import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
 import HourMinuteInput from "@/components/ui/hour-minute";
-import { toZonedTime } from "date-fns-tz";
 import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
+import { toZonedTime } from "date-fns-tz"; // Add this library
 
 interface EventModalProps {
   readonly isOpen: boolean;
@@ -94,19 +94,6 @@ export function EventModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      end: formData.start
-        ? format(
-            addHours(parseISO(formData.start), totalHoursEngaged),
-            "yyyy-MM-dd'T'HH:mm"
-          )
-        : "",
-    });
-  };
-
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return "";
     try {
@@ -133,6 +120,33 @@ export function EventModal({
     console.log("response", response);
     refetch();
     onClose();
+  };
+
+  const calculateEndTime = (start: string, hoursEngaged: number): string => {
+    if (!start || hoursEngaged <= 0) return start;
+
+    // Parse start time as a Date object (UTC if start includes 'Z')
+    const startDate = parseISO(start);
+
+    // Add the engaged time in minutes
+    const endDate = addMinutes(startDate, hoursEngaged * 60);
+
+    // Convert to ISO string to maintain UTC ('Z' offset)
+    return endDate.toISOString();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Convert UTC times back to local for display/API (if needed)
+    const endLocal = calculateEndTime(formData.start, formData.hoursEngaged);
+
+    console.log("endLocal", endLocal);
+
+    onSubmit({
+      ...formData,
+      end: endLocal,
+    });
   };
 
   return (
