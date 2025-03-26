@@ -16,13 +16,6 @@ export interface CalendarEvent {
   updatedAt?: string;
 }
 
-export interface SlotInfo {
-  start: Date;
-  end: Date;
-  slots: Date[];
-  action: "select" | "click" | "doubleClick";
-}
-
 export interface CalendarEventResponse {
   success: boolean;
   code: number;

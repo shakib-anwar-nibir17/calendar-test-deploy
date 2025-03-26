@@ -26,6 +26,7 @@ import { CurrentTime } from "./current-time";
 import { TimeZoneSelector } from "./time-zone-selector";
 import { CustomEventContent } from "./custom-event-content";
 import DeleteConfirmation from "./deleteModal";
+import momentPlugin from "@fullcalendar/moment-timezone";
 
 export default function Calendar() {
   const { data: events, isLoading, refetch, isError } = useGetEventsQuery();
@@ -33,6 +34,7 @@ export default function Calendar() {
   const [updateEvent] = useUpdateEventMutation();
   const [deleteEvent] = useDeleteEventMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteEventId, setDeleteEventId] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent>(
     {} as CalendarEvent
   );
@@ -61,6 +63,7 @@ export default function Calendar() {
   // Handle event click for editing
   const handleEventClick = (clickInfo: EventClickArg) => {
     if (clickInfo.event.extendedProps.status === "completed") {
+      setDeleteEventId(clickInfo.event.id);
       return setIsDeleteModalOpen(true);
     } else {
       setModalMode("edit");
@@ -120,6 +123,7 @@ export default function Calendar() {
 
   // Handle event deletion
   const handleDeleteEvent = async (id: string) => {
+    console.log("deleting event", id);
     try {
       await deleteEvent(id).unwrap();
       toast.success("Event deleted successfully.");
@@ -144,6 +148,8 @@ export default function Calendar() {
       </div>
     );
   }
+
+  console.log("events", selectedEvent);
 
   return (
     <div className="calendar-container space-y-6">
@@ -182,14 +188,19 @@ export default function Calendar() {
 
       <div className="rounded-lg border shadow-sm">
         <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[
+            dayGridPlugin,
+            timeGridPlugin,
+            interactionPlugin,
+            momentPlugin,
+          ]}
           key={currentTimeZone}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
-          initialView="dayGridMonth"
+          initialView="timeGridWeek"
           editable={true}
           selectable={true}
           selectMirror={true}
@@ -203,6 +214,7 @@ export default function Calendar() {
           eventContent={(eventInfo) =>
             CustomEventContent(eventInfo, currentTimeZone)
           }
+          nowIndicator={true}
         />
       </div>
 
@@ -222,8 +234,9 @@ export default function Calendar() {
         <DeleteConfirmation
           open={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
-          onDelete={() => handleDeleteEvent(selectedEvent.id)}
-          id={selectedEvent.id}
+          onDelete={() => handleDeleteEvent(deleteEventId)}
+          id={deleteEventId}
+          setDeleteEventId={setDeleteEventId}
         />
       )}
     </div>
