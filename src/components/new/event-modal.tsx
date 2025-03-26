@@ -178,15 +178,6 @@ export function EventModal({
               />
             </div>
 
-            {/* <div className="flex items-center space-x-2">
-              <Checkbox
-                id="allDay"
-                checked={formData.allDay}
-                onCheckedChange={handleCheckboxChange}
-              />
-              <Label htmlFor="allDay">All Day</Label>
-            </div> */}
-
             <div className="grid gap-2">
               <Label htmlFor="backgroundColor">Color</Label>
               <Input
