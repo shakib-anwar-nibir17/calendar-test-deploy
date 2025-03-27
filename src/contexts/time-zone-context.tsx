@@ -1,5 +1,6 @@
 "use client";
 
+import { getTimeZones } from "@/lib/services/timeApi";
 import {
   createContext,
   useContext,
@@ -8,7 +9,6 @@ import {
   type ReactNode,
   useMemo,
 } from "react";
-import { getTimeZones } from "@/lib/services/timeApi";
 
 interface TimeZoneContextType {
   currentTimeZone: string;
