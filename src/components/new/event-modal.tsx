@@ -64,6 +64,9 @@ export function EventModal({
     isRecurring: false,
     recurrencePattern: "weekly",
   });
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
+    null
+  );
 
   const calculateEndTime = (start: string, hoursEngaged: number): string => {
     if (!start || hoursEngaged <= 0) return start;
@@ -92,6 +95,16 @@ export function EventModal({
       });
     }
   }, [event, timeZone]);
+
+  useEffect(() => {
+    if (platforms) {
+      setSelectedPlatform(
+        platforms.data.find(
+          (platform) => platform.name === formData.platform
+        ) || null
+      );
+    }
+  }, [platforms, formData.platform]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -228,23 +241,22 @@ export function EventModal({
               />
             </div>
 
-            {platforms?.data?.find((p) => p.name === formData.platform)
-              ?.paymentType ??
-              (["Weekly", "Bi-Weekly"].includes(
-                platforms?.data?.find((p) => p.name === formData.platform)
-                  ?.paymentType ?? ""
-              ) && (
-                <div className="grid gap-2">
-                  <div className="flex gap-2">
-                    <Checkbox
-                      id="isRecurring"
-                      checked={formData.isRecurring}
-                      onCheckedChange={handleRecurringChange}
-                    />
-                    <Label htmlFor="isRecurring">Make Recurring</Label>
-                  </div>
-                </div>
-              ))}
+            <div className="grid gap-2">
+              <div className="flex gap-2">
+                <Checkbox
+                  id="isRecurring"
+                  checked={formData.isRecurring}
+                  onCheckedChange={handleRecurringChange}
+                  disabled={
+                    !["Weekly", "Bi-Weekly"].includes(
+                      selectedPlatform?.paymentType ?? ""
+                    )
+                  }
+                />
+                <Label htmlFor="isRecurring">Make Recurring</Label>
+              </div>
+            </div>
+
             {mode === "edit" && (
               <div className="grid gap-2">
                 <div className="flex gap-2">
