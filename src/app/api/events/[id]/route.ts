@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import CalendarEventModel from "@/models/calendar-event.model";
 import mongoose from "mongoose";
 import { connectToMongoDB } from "@/lib/mongodb";
+import { generateRecurringEvents } from "@/lib/services/cron";
 
 // GET a specific event
 export async function GET(
@@ -51,52 +52,6 @@ export async function GET(
   }
 }
 
-// POST a new event
-export async function POST(request: Request) {
-  try {
-    const data = await request.json();
-    await connectToMongoDB();
-
-    const event = await CalendarEventModel.create({
-      platform: data.platform,
-      start: data.start,
-      end: data.end,
-      backgroundColor: data.backgroundColor,
-      displayStart: data.displayStart,
-      displayEnd: data.displayEnd,
-      hoursEngaged: data.hoursEngaged,
-      status: data.status,
-      allday: data.allday,
-      timeZone: data.timeZone,
-    });
-
-    const transformedEvent = {
-      id: event._id.toString(),
-      platform: event.platform,
-      start: event.start,
-      end: event.end,
-      backgroundColor: event.backgroundColor,
-      displayStart: event.displayStart,
-      displayEnd: event.displayEnd,
-      hoursEngaged: event.hoursEngaged,
-      status: event.status,
-      allday: event.allday,
-      timeZone: event.timeZone,
-      createdAt: event.createdAt,
-      updatedAt: event.updatedAt,
-    };
-
-    return NextResponse.json(transformedEvent, { status: 201 });
-  } catch (error) {
-    console.error("Failed to create event:", error);
-    return NextResponse.json(
-      { error: "Failed to create event" },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT (update) a specific event
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -112,16 +67,76 @@ export async function PUT(
       );
     }
 
-    const event = await CalendarEventModel.findByIdAndUpdate(params.id, data, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!event) {
+    const existingEvent = await CalendarEventModel.findById(params.id);
+    if (!existingEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    return NextResponse.json(event);
+    // Check if the event is recurring
+    const isRecurring = Boolean(data.isRecurring);
+    let recurrencePattern = data.recurrencePattern;
+
+    if (isRecurring) {
+      if (!recurrencePattern) {
+        recurrencePattern = "weekly"; // Default to weekly if not provided
+      }
+    } else {
+      recurrencePattern = undefined;
+    }
+
+    // Update the main event
+    const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
+      params.id,
+      { ...data, isRecurring, recurrencePattern },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: "Failed to update event" },
+        { status: 500 }
+      );
+    }
+
+    // Handle recurring event updates
+    if (isRecurring) {
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: updatedEvent._id,
+      });
+      for (const childEvent of childEvents) {
+        await CalendarEventModel.findByIdAndUpdate(childEvent._id, {
+          platform: updatedEvent.platform,
+          end: updatedEvent.end,
+          hoursEngaged: updatedEvent.hoursEngaged,
+          allday: updatedEvent.allday,
+          timeZone: updatedEvent.timeZone,
+        });
+      }
+
+      // Generate new recurring events if necessary
+      setTimeout(() => {
+        generateRecurringEvents().catch((err) =>
+          console.error("Error generating recurring events:", err)
+        );
+      }, 1000);
+    } else if (existingEvent.isRecurring) {
+      const url = new URL(request.url);
+      const updateChildren = url.searchParams.get("updateChildren") === "true";
+
+      if (updateChildren) {
+        await CalendarEventModel.updateMany(
+          { parentEventId: updatedEvent._id },
+          { isRecurring: false, recurrencePattern: undefined }
+        );
+      } else {
+        await CalendarEventModel.deleteMany({
+          parentEventId: updatedEvent._id,
+          start: { $gt: new Date() },
+        });
+      }
+    }
+
+    return NextResponse.json(updatedEvent);
   } catch (error) {
     console.error("Failed to update event:", error);
     return NextResponse.json(
@@ -131,37 +146,34 @@ export async function PUT(
   }
 }
 
-// DELETE a specific event
 export async function DELETE(
   request: Request,
-  context: { params?: { id?: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectToMongoDB();
 
-    // Explicitly await context if necessary (though this is uncommon)
-    const params = context?.params;
-
-    if (!params?.id) {
-      return NextResponse.json(
-        { error: "Event ID is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!params?.id || !mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "Invalid event ID format" },
         { status: 400 }
       );
     }
 
-    const event = await CalendarEventModel.findByIdAndDelete(params.id);
-
+    const event = await CalendarEventModel.findById(params.id);
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
+    // Check if we should delete child events
+    const url = new URL(request.url);
+    const deleteChildren = url.searchParams.get("deleteChildren") === "true";
+
+    if (event.isRecurring && deleteChildren) {
+      await CalendarEventModel.deleteMany({ parentEventId: event._id });
+    }
+
+    await CalendarEventModel.findByIdAndDelete(params.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Failed to delete event:", error);
