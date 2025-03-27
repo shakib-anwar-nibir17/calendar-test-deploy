@@ -1,6 +1,5 @@
 "use client";
 
-import { fetchTimeApiEvents } from "@/lib/services/timeApi";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { CalendarEvent as Event } from "../states/calender";
 
@@ -19,8 +18,7 @@ export const eventsApi = createApi({
           }
           const dbEvents: Event[] = await response.json();
 
-          const timeApiEvents = await fetchTimeApiEvents();
-          const allEvents = [...dbEvents, ...timeApiEvents];
+          const allEvents = [...dbEvents];
 
           return { data: { events: allEvents } };
         } catch (error) {
@@ -59,6 +57,18 @@ export const eventsApi = createApi({
         method: "DELETE",
       }),
       invalidatesTags: (result, error, id) => [{ type: "Events", id }],
+    }),
+
+    // Add a new endpoint to trigger the cron job manually
+    triggerRecurringEventsGeneration: builder.mutation<
+      { success: boolean },
+      void
+    >({
+      query: () => ({
+        url: "api/cron",
+        method: "GET",
+      }),
+      invalidatesTags: [{ type: "Events", id: "LIST" }],
     }),
   }),
 });

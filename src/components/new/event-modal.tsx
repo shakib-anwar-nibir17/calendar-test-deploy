@@ -61,6 +61,8 @@ export function EventModal({
     hoursEngaged: 0,
     status: "create",
     timeZone: "UTC",
+    isRecurring: false,
+    recurrencePattern: "weekly",
   });
 
   const calculateEndTime = (start: string, hoursEngaged: number): string => {
@@ -85,6 +87,8 @@ export function EventModal({
         status: event.status || "create",
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
+        isRecurring: event.isRecurring ?? false,
+        recurrencePattern: event.recurrencePattern ?? "weekly",
       });
     }
   }, [event, timeZone]);
@@ -130,6 +134,22 @@ export function EventModal({
       ...formData,
       hoursEngaged: Number(value),
     });
+  };
+
+  const handleRecurringChange = (checked: boolean) => {
+    const platform = platforms?.data?.find((p) => p.name === formData.platform);
+
+    setFormData((prev) => ({
+      ...prev,
+      isRecurring: checked,
+      recurrencePattern: checked
+        ? (() => {
+            if (platform?.paymentType === "Weekly") return "weekly";
+            if (platform?.paymentType === "Bi-Weekly") return "bi-weekly";
+            return "weekly"; // Default fallback
+          })()
+        : undefined,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,6 +228,23 @@ export function EventModal({
               />
             </div>
 
+            {platforms?.data?.find((p) => p.name === formData.platform)
+              ?.paymentType ??
+              (["Weekly", "Bi-Weekly"].includes(
+                platforms?.data?.find((p) => p.name === formData.platform)
+                  ?.paymentType ?? ""
+              ) && (
+                <div className="grid gap-2">
+                  <div className="flex gap-2">
+                    <Checkbox
+                      id="isRecurring"
+                      checked={formData.isRecurring}
+                      onCheckedChange={handleRecurringChange}
+                    />
+                    <Label htmlFor="isRecurring">Make Recurring</Label>
+                  </div>
+                </div>
+              ))}
             {mode === "edit" && (
               <div className="grid gap-2">
                 <div className="flex gap-2">
