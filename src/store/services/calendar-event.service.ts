@@ -79,4 +79,5 @@ export const {
   useCreateEventMutation,
   useUpdateEventMutation,
   useDeleteEventMutation,
+  useTriggerRecurringEventsGenerationMutation,
 } = eventsApi;
