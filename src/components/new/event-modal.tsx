@@ -21,6 +21,7 @@ import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
 import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
 import { toZonedTime } from "date-fns-tz";
+import { Switch } from "../ui/switch";
 
 const hoursEngagedOptions = [
   { value: 0.5, label: "30 minutes" },
@@ -241,20 +242,18 @@ export function EventModal({
               />
             </div>
 
-            <div className="grid gap-2">
-              <div className="flex gap-2">
-                <Checkbox
-                  id="isRecurring"
-                  checked={formData.isRecurring}
-                  onCheckedChange={handleRecurringChange}
-                  disabled={
-                    !["Weekly", "Bi-Weekly"].includes(
-                      selectedPlatform?.paymentType ?? ""
-                    )
-                  }
-                />
-                <Label htmlFor="isRecurring">Make Recurring</Label>
-              </div>
+            <div className="gap-2 flex items-center">
+              <Switch
+                id="isRecurring"
+                checked={formData.isRecurring}
+                onCheckedChange={handleRecurringChange}
+                disabled={
+                  !["Weekly", "Bi-Weekly"].includes(
+                    selectedPlatform?.paymentType ?? ""
+                  )
+                }
+              />
+              <Label htmlFor="isRecurring">This is a recurring event</Label>
             </div>
 
             {mode === "edit" && (
