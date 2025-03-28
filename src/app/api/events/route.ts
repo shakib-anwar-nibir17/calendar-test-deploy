@@ -9,10 +9,13 @@ export async function GET() {
   try {
     await connectToMongoDB();
 
-    // Fetch all events excluding child recurring events
-    const events = await CalendarEventModel.find({
-      parentEventId: { $exists: false },
-    }).sort({ createdAt: -1 });
+    // // Fetch all events excluding child recurring events
+    // const events = await CalendarEventModel.find({
+    //   parentEventId: { $exists: false },
+    // }).sort({ createdAt: -1 });
+
+    // Fetch all events, including child recurring events
+    const events = await CalendarEventModel.find().sort({ createdAt: -1 });
 
     // Transform the MongoDB _id to id for frontend compatibility
     const transformedEvents = events.map((event) => ({

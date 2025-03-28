@@ -165,14 +165,26 @@ export async function DELETE(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Check if we should delete child events
-    const url = new URL(request.url);
-    const deleteChildren = url.searchParams.get("deleteChildren") === "true";
+    if (event.isRecurring) {
+      // If it's a parent event, delete all child events first
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: event._id,
+      });
 
-    if (event.isRecurring && deleteChildren) {
-      await CalendarEventModel.deleteMany({ parentEventId: event._id });
+      if (childEvents.length > 0) {
+        await CalendarEventModel.deleteMany({ parentEventId: event._id });
+      }
+
+      // Delete the parent event after deleting its children
+      await CalendarEventModel.findByIdAndDelete(params.id);
+      return new NextResponse(null, { status: 204 });
+    } else if (event.parentEventId) {
+      // If it's a child event, delete only itself
+      await CalendarEventModel.findByIdAndDelete(params.id);
+      return new NextResponse(null, { status: 204 });
     }
 
+    // If it's a standalone event, delete it normally
     await CalendarEventModel.findByIdAndDelete(params.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
