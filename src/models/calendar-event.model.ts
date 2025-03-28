@@ -23,7 +23,7 @@ const calendarEventSchema = new Schema<CalendarEvent>(
     platform: { type: String, required: true },
     start: { type: Date, required: true },
     end: { type: Date, required: true },
-    backgroundColor: { type: String, default: "#ffffff" }, // Default to white
+    backgroundColor: { type: String, default: "#3788d8" }, // Default to white
     displayStart: { type: Date },
     displayEnd: { type: Date },
     hoursEngaged: { type: Number, default: 0 },

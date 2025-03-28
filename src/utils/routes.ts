@@ -6,4 +6,5 @@ export const ROUTES = {
   PLATFORMS: `/platforms`,
   SCHEDULE: `/schedule`,
   PAYMENT: `/payment`,
+  MANAGE_EVENTS: `/manage-events`,
 } as const;
