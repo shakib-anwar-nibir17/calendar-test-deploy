@@ -123,7 +123,6 @@ export default function Calendar() {
 
   // Handle event deletion
   const handleDeleteEvent = async (id: string) => {
-    console.log("deleting event", id);
     try {
       await deleteEvent(id).unwrap();
       toast.success("Event deleted successfully.");
@@ -149,8 +148,6 @@ export default function Calendar() {
     );
   }
 
-  console.log("events", selectedEvent);
-
   return (
     <div className="calendar-container space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -172,7 +169,7 @@ export default function Calendar() {
                   hoursEngaged: 0,
                   status: "create",
                   timeZone: currentTimeZone,
-                  backgroundColor: "#ffff",
+                  backgroundColor: "#3b82f6",
                   start: new Date().toISOString(),
                   end: new Date().toISOString(),
                   allDay: false,

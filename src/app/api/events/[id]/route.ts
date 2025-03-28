@@ -148,12 +148,14 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     await connectToMongoDB();
 
-    const { id } = params;
+    const { params } = context;
+    console.log(params.id); // ✅ Ensure `params` is accessed from `context`
+    const id = params?.id;
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid event ID format" },
@@ -177,7 +179,7 @@ export async function DELETE(
       if (!parentExists) {
         await CalendarEventModel.updateMany(
           { parentEventId: parentId },
-          { parentEventId: "" }
+          { parentEventId: null }
         );
       }
     }

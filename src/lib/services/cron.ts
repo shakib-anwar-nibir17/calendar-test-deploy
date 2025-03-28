@@ -84,6 +84,7 @@ export async function generateRecurringEvents() {
             timeZone: event.timeZone,
             isRecurring: false, // Child events are not recurring themselves
             parentEventId: event._id,
+            backgroundColor: event.backgroundColor,
           });
 
           await newEvent.save();

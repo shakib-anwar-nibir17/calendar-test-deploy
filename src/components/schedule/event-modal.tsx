@@ -81,11 +81,18 @@ export function EventModal({
 
   useEffect(() => {
     if (event) {
+      const isValidDate = (date: string) =>
+        date && !isNaN(new Date(date).getTime());
+
       setFormData({
         id: event.id || "",
         platform: event.platform || "",
-        start: toZonedTime(event.start, timeZone).toISOString() || "",
-        end: toZonedTime(event.end, timeZone).toISOString() || "",
+        start: isValidDate(event.start)
+          ? toZonedTime(event.start, timeZone).toISOString()
+          : "",
+        end: isValidDate(event.end)
+          ? toZonedTime(event.end, timeZone).toISOString()
+          : "",
         allDay: event.allDay || false,
         hoursEngaged: event.hoursEngaged || 0.5,
         status: event.status || "create",
