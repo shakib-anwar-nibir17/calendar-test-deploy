@@ -153,39 +153,35 @@ export async function DELETE(
   try {
     await connectToMongoDB();
 
-    if (!params?.id || !mongoose.Types.ObjectId.isValid(params.id)) {
+    const { id } = params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid event ID format" },
         { status: 400 }
       );
     }
 
-    const event = await CalendarEventModel.findById(params.id);
+    const event = await CalendarEventModel.findById(id);
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    if (event.isRecurring) {
-      // If it's a parent event, delete all child events first
-      const childEvents = await CalendarEventModel.find({
-        parentEventId: event._id,
-      });
+    const parentId = event.parentEventId;
 
-      if (childEvents.length > 0) {
-        await CalendarEventModel.deleteMany({ parentEventId: event._id });
+    // Delete the event
+    await CalendarEventModel.findByIdAndDelete(id);
+
+    // If it was a child event, check if the parent still exists
+    if (parentId) {
+      const parentExists = await CalendarEventModel.findById(parentId);
+      if (!parentExists) {
+        await CalendarEventModel.updateMany(
+          { parentEventId: parentId },
+          { parentEventId: "" }
+        );
       }
-
-      // Delete the parent event after deleting its children
-      await CalendarEventModel.findByIdAndDelete(params.id);
-      return new NextResponse(null, { status: 204 });
-    } else if (event.parentEventId) {
-      // If it's a child event, delete only itself
-      await CalendarEventModel.findByIdAndDelete(params.id);
-      return new NextResponse(null, { status: 204 });
     }
 
-    // If it's a standalone event, delete it normally
-    await CalendarEventModel.findByIdAndDelete(params.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Failed to delete event:", error);

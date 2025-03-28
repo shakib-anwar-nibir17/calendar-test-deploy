@@ -59,6 +59,13 @@ export const eventsApi = createApi({
       invalidatesTags: (result, error, id) => [{ type: "Events", id }],
     }),
 
+    deleteParentEvent: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `events?id=${id}`, // Pass the event ID as a query parameter
+        method: "DELETE",
+      }),
+    }),
+
     // Add a new endpoint to trigger the cron job manually
     triggerRecurringEventsGeneration: builder.mutation<
       { success: boolean },
@@ -79,5 +86,6 @@ export const {
   useCreateEventMutation,
   useUpdateEventMutation,
   useDeleteEventMutation,
+  useDeleteParentEventMutation,
   useTriggerRecurringEventsGenerationMutation,
 } = eventsApi;

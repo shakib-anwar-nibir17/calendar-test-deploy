@@ -3,6 +3,7 @@ import CalendarEventModel from "@/models/calendar-event.model";
 import { NextResponse } from "next/server";
 import { addWeeks } from "date-fns";
 import Platform from "@/models/platform.model";
+import mongoose from "mongoose";
 
 // GET all events
 export async function GET() {
@@ -135,6 +136,43 @@ export async function POST(request: Request) {
     console.error("Failed to create event:", error);
     return NextResponse.json(
       { error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await connectToMongoDB();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { error: "Invalid event ID format" },
+        { status: 400 }
+      );
+    }
+
+    const event = await CalendarEventModel.findById(id);
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    if (event.isRecurring) {
+      // Delete all child events first
+      await CalendarEventModel.deleteMany({ parentEventId: event._id });
+    }
+
+    // Delete the parent or standalone event
+    await CalendarEventModel.findByIdAndDelete(id);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Failed to delete event:", error);
+    return NextResponse.json(
+      { error: "Failed to delete event" },
       { status: 500 }
     );
   }
