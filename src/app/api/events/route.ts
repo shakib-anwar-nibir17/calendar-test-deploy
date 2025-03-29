@@ -182,6 +182,7 @@ export async function DELETE(request: Request) {
 export async function PUT(request: Request) {
   try {
     const data = await request.json();
+    console.log("Received request:", data);
     if (!data) {
       return NextResponse.json({ error: "No data provided" }, { status: 400 });
     }
@@ -225,16 +226,25 @@ export async function PUT(request: Request) {
 
     // Handle updates for child events if recurrence is enabled
     if (isRecurring) {
-      await CalendarEventModel.updateMany(
-        { parentEventId: updatedEvent._id },
-        {
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: updatedEvent._id,
+      });
+
+      for (const event of childEvents) {
+        const newStart = new Date(event.start);
+        const newEnd = new Date(
+          newStart.getTime() + updatedEvent.hoursEngaged * 60 * 60 * 1000
+        );
+
+        await CalendarEventModel.findByIdAndUpdate(event._id, {
           platform: updatedEvent.platform,
-          end: updatedEvent.end,
+          start: newStart,
+          end: newEnd, // Dynamically set end time
           hoursEngaged: updatedEvent.hoursEngaged,
           allday: updatedEvent.allday,
           timeZone: updatedEvent.timeZone,
-        }
-      );
+        });
+      }
 
       // Generate new recurring events asynchronously
       generateRecurringEvents().catch((err) =>
