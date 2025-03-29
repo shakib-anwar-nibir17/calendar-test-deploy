@@ -1,4 +1,4 @@
-import Calendar from "@/components/new/calendar";
+import Calendar from "@/components/schedule/calendar";
 import { LucideLoader } from "lucide-react";
 import { Suspense } from "react";
 

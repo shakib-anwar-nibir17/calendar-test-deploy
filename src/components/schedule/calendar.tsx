@@ -123,7 +123,6 @@ export default function Calendar() {
 
   // Handle event deletion
   const handleDeleteEvent = async (id: string) => {
-    console.log("deleting event", id);
     try {
       await deleteEvent(id).unwrap();
       toast.success("Event deleted successfully.");
@@ -148,8 +147,6 @@ export default function Calendar() {
       </div>
     );
   }
-
-  console.log("events", selectedEvent);
 
   return (
     <div className="calendar-container space-y-6">
