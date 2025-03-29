@@ -13,18 +13,19 @@ import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import {
   useDeleteParentEventMutation,
   useGetEventsQuery,
-  useUpdateEventMutation,
+  useGlobalUpdateEventMutation,
 } from "@/store/services/calendar-event.service";
 import { CalendarEvent } from "@/store/states/calender";
 import { Platform } from "@/store/states/platforms";
 import EventList from "./event-list";
 import { EventForm } from "./event-form";
 import { useTimeZone } from "@/contexts/time-zone-context";
+import { toast } from "sonner";
 
 export default function EventDashboard() {
   const { data: platforms } = useGetPlatformsQuery();
-  const { data: allEvents } = useGetEventsQuery();
-  const [updateEvent] = useUpdateEventMutation();
+  const { data: allEvents, refetch } = useGetEventsQuery();
+  const [updateEvent] = useGlobalUpdateEventMutation();
   const [deleteParentEvent] = useDeleteParentEventMutation();
   const { currentTimeZone } = useTimeZone();
 
@@ -53,14 +54,21 @@ export default function EventDashboard() {
 
   const handleSaveEvent = (eventData: CalendarEvent) => {
     if (selectedEvent) {
-      console.log("Updated event:", eventData);
+      const response = updateEvent(eventData);
+      console.log(response);
     }
     setSelectedEvent({} as CalendarEvent);
+    refetch();
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     const response = await deleteParentEvent(eventId);
-    console.log(response);
+    if (response.data) {
+      toast.success("Event deleted successfully.");
+    } else {
+      toast.error("Failed to delete event.");
+    }
+    refetch();
   };
 
   const handlePlatformChange = (name: string) => {
