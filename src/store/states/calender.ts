@@ -14,6 +14,9 @@ export interface CalendarEvent {
   timeZone: string;
   createdAt?: string;
   updatedAt?: string;
+  isRecurring?: boolean;
+  recurrencePattern?: "weekly" | "bi-weekly";
+  parentEventId?: string;
 }
 
 export interface CalendarEventResponse {

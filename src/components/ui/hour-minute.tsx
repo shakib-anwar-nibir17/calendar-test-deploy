@@ -44,7 +44,7 @@ export default function HourSelectInput({
 
   return (
     <div className={cn("flex flex-col space-y-2", className)}>
-      <Label>Select Time</Label>
+      <Label>Total Hours</Label>
       <Select
         onValueChange={handleChange}
         defaultValue={String(defaultTotal)}

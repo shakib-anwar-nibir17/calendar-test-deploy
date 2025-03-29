@@ -1,9 +1,11 @@
 import { ROUTES } from "@/utils/routes";
+
 import {
   Calendar,
   GraduationCap,
   LayoutGrid,
   LucideIcon,
+  Settings2,
   Wallet2,
 } from "lucide-react";
 
@@ -54,6 +56,12 @@ export function getMenuList(pathname: string): Group[] {
           href: ROUTES.PAYMENT,
           label: "Payment",
           icon: Wallet2,
+          submenus: [],
+        },
+        {
+          href: ROUTES.MANAGE_EVENTS,
+          label: "Manage Events",
+          icon: Settings2,
           submenus: [],
         },
       ],
