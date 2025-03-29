@@ -36,7 +36,7 @@ export default function EventDashboard() {
 
   const [selectedPlatform, setSelectedPlatform] = useState<
     Platform["name"] | string
-  >("all");
+  >(platforms?.data?.[0]?.name ?? "all");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent>(
     {} as CalendarEvent
   );
@@ -52,19 +52,20 @@ export default function EventDashboard() {
     setSelectedEvent(event);
   };
 
-  const handleSaveEvent = (eventData: CalendarEvent) => {
+  const handleSaveEvent = async (eventData: CalendarEvent) => {
     if (selectedEvent) {
-      const response = updateEvent(eventData);
+      const response = await updateEvent(eventData);
       console.log(response);
     }
     setSelectedEvent({} as CalendarEvent);
-    refetch();
+    await refetch();
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     const response = await deleteParentEvent(eventId);
-    if (response.data) {
+    if (response) {
       toast.success("Event deleted successfully.");
+      setSelectedEvent({} as CalendarEvent);
     } else {
       toast.error("Failed to delete event.");
     }

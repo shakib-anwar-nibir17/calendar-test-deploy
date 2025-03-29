@@ -64,6 +64,7 @@ export const eventsApi = createApi({
         url: `events?id=${id}`, // Pass the event ID as a query parameter
         method: "DELETE",
       }),
+      invalidatesTags: (result, error, id) => [{ type: "Events", id }],
     }),
 
     globalUpdateEvent: builder.mutation<Event, Partial<Event> & { id: string }>(
