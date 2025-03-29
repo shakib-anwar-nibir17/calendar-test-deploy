@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { addWeeks } from "date-fns";
 import Platform from "@/models/platform.model";
 import mongoose from "mongoose";
+import { generateRecurringEvents } from "@/lib/services/cron";
 
 // GET all events
 export async function GET() {
@@ -173,6 +174,96 @@ export async function DELETE(request: Request) {
     console.error("Failed to delete event:", error);
     return NextResponse.json(
       { error: "Failed to delete event" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const data = await request.json();
+    if (!data) {
+      return NextResponse.json({ error: "No data provided" }, { status: 400 });
+    }
+
+    await connectToMongoDB();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { error: "Invalid event ID format" },
+        { status: 400 }
+      );
+    }
+
+    const existingEvent = await CalendarEventModel.findById(id);
+    if (!existingEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Determine recurrence settings
+    const isRecurring = Boolean(data.isRecurring);
+    const recurrencePattern = isRecurring
+      ? data.recurrencePattern || "weekly"
+      : undefined;
+
+    // Update the main event
+    const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
+      id,
+      { ...data, isRecurring, recurrencePattern },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: "Failed to update event" },
+        { status: 500 }
+      );
+    }
+
+    // Handle updates for child events if recurrence is enabled
+    if (isRecurring) {
+      await CalendarEventModel.updateMany(
+        { parentEventId: updatedEvent._id },
+        {
+          platform: updatedEvent.platform,
+          end: updatedEvent.end,
+          hoursEngaged: updatedEvent.hoursEngaged,
+          allday: updatedEvent.allday,
+          timeZone: updatedEvent.timeZone,
+        }
+      );
+
+      // Generate new recurring events asynchronously
+      generateRecurringEvents().catch((err) =>
+        console.error("Error generating recurring events:", err)
+      );
+    } else if (existingEvent.isRecurring) {
+      // If event was previously recurring, determine how to handle child events
+      const updateChildren = searchParams.get("updateChildren") === "true";
+
+      if (updateChildren) {
+        // Keep child events but mark them as non-recurring
+        await CalendarEventModel.updateMany(
+          { parentEventId: updatedEvent._id },
+          { isRecurring: false, recurrencePattern: undefined }
+        );
+      } else {
+        // Remove future recurring instances
+        await CalendarEventModel.deleteMany({
+          parentEventId: updatedEvent._id,
+          start: { $gt: new Date() },
+        });
+      }
+    }
+
+    return NextResponse.json(updatedEvent);
+  } catch (error) {
+    console.error("Failed to update event:", error);
+    return NextResponse.json(
+      { error: "Failed to update event" },
       { status: 500 }
     );
   }

@@ -72,19 +72,15 @@ export async function PUT(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Check if the event is recurring
+    // Check if user wants to make this event recurring
     const isRecurring = Boolean(data.isRecurring);
     let recurrencePattern = data.recurrencePattern;
 
-    if (isRecurring) {
-      if (!recurrencePattern) {
-        recurrencePattern = "weekly"; // Default to weekly if not provided
-      }
-    } else {
-      recurrencePattern = undefined;
+    if (isRecurring && !recurrencePattern) {
+      recurrencePattern = "weekly"; // Default recurrence pattern
     }
 
-    // Update the main event
+    // Update only the current event
     const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
       params.id,
       { ...data, isRecurring, recurrencePattern },
@@ -98,42 +94,13 @@ export async function PUT(
       );
     }
 
-    // Handle recurring event updates
-    if (isRecurring) {
-      const childEvents = await CalendarEventModel.find({
-        parentEventId: updatedEvent._id,
-      });
-      for (const childEvent of childEvents) {
-        await CalendarEventModel.findByIdAndUpdate(childEvent._id, {
-          platform: updatedEvent.platform,
-          end: updatedEvent.end,
-          hoursEngaged: updatedEvent.hoursEngaged,
-          allday: updatedEvent.allday,
-          timeZone: updatedEvent.timeZone,
-        });
-      }
-
-      // Generate new recurring events if necessary
+    // If the event was converted to a recurring event, generate future occurrences
+    if (isRecurring && !existingEvent.isRecurring) {
       setTimeout(() => {
         generateRecurringEvents().catch((err) =>
           console.error("Error generating recurring events:", err)
         );
       }, 1000);
-    } else if (existingEvent.isRecurring) {
-      const url = new URL(request.url);
-      const updateChildren = url.searchParams.get("updateChildren") === "true";
-
-      if (updateChildren) {
-        await CalendarEventModel.updateMany(
-          { parentEventId: updatedEvent._id },
-          { isRecurring: false, recurrencePattern: undefined }
-        );
-      } else {
-        await CalendarEventModel.deleteMany({
-          parentEventId: updatedEvent._id,
-          start: { $gt: new Date() },
-        });
-      }
     }
 
     return NextResponse.json(updatedEvent);

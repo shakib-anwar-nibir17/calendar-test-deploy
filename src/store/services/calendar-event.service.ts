@@ -66,6 +66,17 @@ export const eventsApi = createApi({
       }),
     }),
 
+    globalUpdateEvent: builder.mutation<Event, Partial<Event> & { id: string }>(
+      {
+        query: ({ id, ...updates }) => ({
+          url: `/events?id=${id}`,
+          method: "PUT",
+          body: updates,
+        }),
+        invalidatesTags: (result, error, { id }) => [{ type: "Events", id }],
+      }
+    ),
+
     // Add a new endpoint to trigger the cron job manually
     triggerRecurringEventsGeneration: builder.mutation<
       { success: boolean },
@@ -87,5 +98,6 @@ export const {
   useUpdateEventMutation,
   useDeleteEventMutation,
   useDeleteParentEventMutation,
+  useGlobalUpdateEventMutation,
   useTriggerRecurringEventsGenerationMutation,
 } = eventsApi;
