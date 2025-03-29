@@ -148,6 +148,8 @@ export default function Calendar() {
     );
   }
 
+  console.log("events", events);
+
   return (
     <div className="calendar-container space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
