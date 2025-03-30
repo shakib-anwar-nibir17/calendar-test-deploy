@@ -1,5 +1,5 @@
 import { CronJob } from "cron";
-import { addWeeks, addDays, format } from "date-fns";
+import { addWeeks, addDays, format, addHours } from "date-fns";
 import { connectToMongoDB } from "../mongodb";
 
 import CalendarEventModel from "@/models/calendar-event.model";
@@ -98,6 +98,89 @@ export async function generateRecurringEvents() {
     console.log("Completed recurring events generation");
   } catch (error) {
     console.error("Error generating recurring events:", error);
+  }
+}
+
+export async function generateRecurringEventsForEvent(eventId: string) {
+  try {
+    // Fetch the event
+    const event = await CalendarEventModel.findById(eventId);
+    if (!event) {
+      return { message: "Event not found" };
+    }
+
+    if (event.isRecurring && !event.parentEventId) {
+      // Parent event logic: Check for 4 weeks of child events
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: event._id,
+      });
+
+      return {
+        message: `Parent event has ${childEvents.length} child events for recurring`,
+      };
+    } else if (event.parentEventId) {
+      // Child event logic: Find parent and generate additional events
+      const parentEvent = await CalendarEventModel.findById(
+        event.parentEventId
+      );
+      if (!parentEvent) {
+        return { message: "Parent event not found" };
+      }
+
+      // Get all children to determine the sequence position
+      const siblingEvents = await CalendarEventModel.find({
+        parentEventId: parentEvent._id,
+      }).sort({ start: 1 });
+
+      const childIndex = siblingEvents.findIndex((e) =>
+        e._id.equals(event._id)
+      );
+      if (childIndex === -1) {
+        return { message: "Child event not found in sequence" };
+      }
+
+      const eventsToGenerate = childIndex + 1;
+      const startDate = new Date(parentEvent.start);
+      const interval = parentEvent.recurrencePattern === "bi-weekly" ? 2 : 1;
+      const now = new Date();
+
+      let generatedCount = 0;
+      for (let i = 1; i <= eventsToGenerate; i++) {
+        const instanceDate = addWeeks(
+          startDate,
+          (siblingEvents.length + i) * interval
+        );
+        if (instanceDate < now) continue;
+
+        const existingEvent = await CalendarEventModel.findOne({
+          parentEventId: parentEvent._id,
+          start: instanceDate,
+        });
+
+        if (!existingEvent) {
+          await new CalendarEventModel({
+            platform: parentEvent.platform,
+            start: instanceDate,
+            end: addHours(instanceDate, parentEvent.hoursEngaged),
+            hoursEngaged: parentEvent.hoursEngaged,
+            status: "active",
+            allDay: parentEvent.allDay,
+            timeZone: parentEvent.timeZone,
+            isRecurring: false,
+            parentEventId: parentEvent._id,
+            backgroundColor: parentEvent.backgroundColor,
+          }).save();
+          generatedCount++;
+        }
+      }
+
+      return { message: `Generated ${generatedCount} additional events` };
+    }
+
+    return { message: "Event is neither a parent nor a child" };
+  } catch (error) {
+    console.error("Error handling event edit:", error);
+    return { message: "Error processing event" };
   }
 }
 

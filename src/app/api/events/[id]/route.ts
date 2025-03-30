@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import CalendarEventModel from "@/models/calendar-event.model";
 import mongoose from "mongoose";
 import { connectToMongoDB } from "@/lib/mongodb";
-import { generateRecurringEvents } from "@/lib/services/cron";
+import { generateRecurringEventsForEvent } from "@/lib/services/cron";
 
 // GET a specific event
 export async function GET(
@@ -54,25 +54,35 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await request.json();
+    // Ensure params is awaited properly
+
+    const eventId = (await context.params).id;
+
+    if (!eventId) {
+      return NextResponse.json({ error: "Missing event ID" }, { status: 400 });
+    }
+
     await connectToMongoDB();
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
       return NextResponse.json(
         { error: "Invalid event ID format" },
         { status: 400 }
       );
     }
 
-    const existingEvent = await CalendarEventModel.findById(params.id);
+    const existingEvent = await CalendarEventModel.findById(eventId);
     if (!existingEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
     // Check if user wants to make this event recurring
+    const data = await request.json();
+
+    console.log("Received request:", data);
     const isRecurring = Boolean(data.isRecurring);
     let recurrencePattern = data.recurrencePattern;
 
@@ -80,9 +90,9 @@ export async function PUT(
       recurrencePattern = "weekly"; // Default recurrence pattern
     }
 
-    // Update only the current event
+    // Update the event
     const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
-      params.id,
+      eventId,
       { ...data, isRecurring, recurrencePattern },
       { new: true, runValidators: true }
     );
@@ -94,13 +104,9 @@ export async function PUT(
       );
     }
 
-    // If the event was converted to a recurring event, generate future occurrences
+    // Generate future occurrences if event is converted to recurring
     if (isRecurring && !existingEvent.isRecurring) {
-      setTimeout(() => {
-        generateRecurringEvents().catch((err) =>
-          console.error("Error generating recurring events:", err)
-        );
-      }, 1000);
+      await generateRecurringEventsForEvent(existingEvent._id);
     }
 
     return NextResponse.json(updatedEvent);

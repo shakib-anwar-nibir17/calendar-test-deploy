@@ -98,7 +98,7 @@ export function EventModal({
         status: event.status || "create",
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
-        isRecurring: event.isRecurring ?? false,
+        isRecurring: event.isRecurring || false,
         recurrencePattern: event.recurrencePattern ?? "weekly",
       });
     }
@@ -183,6 +183,8 @@ export function EventModal({
       end: endLocal,
     });
   };
+
+  console.log(event);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
