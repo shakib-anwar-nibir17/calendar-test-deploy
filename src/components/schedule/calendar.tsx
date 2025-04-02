@@ -56,6 +56,8 @@ export default function Calendar() {
       start: selectInfo.startStr,
       end: selectInfo.endStr,
       allDay: selectInfo.allDay,
+      isRecurring: false,
+      recurrencePattern: "weekly",
     });
     setIsModalOpen(true);
   };
@@ -77,6 +79,8 @@ export default function Calendar() {
         start: clickInfo.event.startStr,
         end: clickInfo.event.endStr,
         allDay: clickInfo.event.allDay,
+        isRecurring: clickInfo.event.extendedProps.isRecurring,
+        recurrencePattern: clickInfo.event.extendedProps.recurrencePattern,
       });
       setIsModalOpen(true);
     }

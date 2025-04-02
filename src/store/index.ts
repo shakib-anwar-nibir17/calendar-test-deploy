@@ -3,6 +3,7 @@ import sidebarReducer from "./slices/sidebar.slice";
 import { timeZoneApi } from "./services/time-zone.service";
 import { platformApi } from "./services/platform.service";
 import { eventsApi as calendarEventApi } from "./services/calendar-event.service";
+import { statsApi } from "./services/stats.service";
 
 export const makeStore = () => {
   return configureStore({
@@ -11,12 +12,14 @@ export const makeStore = () => {
       [timeZoneApi.reducerPath]: timeZoneApi.reducer,
       [platformApi.reducerPath]: platformApi.reducer,
       [calendarEventApi.reducerPath]: calendarEventApi.reducer,
+      [statsApi.reducerPath]: statsApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(
         timeZoneApi.middleware,
         platformApi.middleware,
-        calendarEventApi.middleware
+        calendarEventApi.middleware,
+        statsApi.middleware
       ),
   });
 };

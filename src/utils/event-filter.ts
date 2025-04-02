@@ -1,25 +1,30 @@
-/**
- * Utility functions to filter calendar events
- */
-
 import { CalendarEvent } from "@/store/states/calender";
+import { DateRange } from "react-day-picker";
 
-/**
- * Filters calendar events to find upcoming classes (status: "create")
- * @param events Array of calendar events to filter
- * @returns Array of upcoming calendar events
- */
 export const getUpcomingClasses = (
-  events: CalendarEvent[]
+  events: CalendarEvent[],
+  dateRange: DateRange | undefined
 ): CalendarEvent[] => {
-  return events.filter((event) => event.status === "create");
+  if (!dateRange) return [];
+
+  return events.filter(
+    (event) =>
+      event.status === "create" &&
+      new Date(event.start) >= dateRange.from! &&
+      new Date(event.start) <= dateRange.to!
+  );
 };
 
-/**
- * Filters calendar events to find recent classes (status: "completed")
- * @param events Array of calendar events to filter
- * @returns Array of completed calendar events
- */
-export const getRecentClasses = (events: CalendarEvent[]): CalendarEvent[] => {
-  return events.filter((event) => event.status === "completed");
+export const getRecentClasses = (
+  events: CalendarEvent[],
+  dateRange: DateRange | undefined
+): CalendarEvent[] => {
+  if (!dateRange) return [];
+
+  return events.filter(
+    (event) =>
+      event.status === "completed" &&
+      new Date(event.start) >= dateRange.from! &&
+      new Date(event.start) <= dateRange.to!
+  );
 };

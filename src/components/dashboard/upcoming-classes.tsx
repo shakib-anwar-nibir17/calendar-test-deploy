@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarEvent } from "@/store/states/calender";
 import { getUpcomingClasses } from "@/utils/event-filter";
 import { useGetEventsQuery } from "@/store/services/calendar-event.service";
+import { DateRange } from "react-day-picker";
 
 const formatEventDate = (date: Date): string => {
   if (isToday(date)) return `Today, ${format(date, "h:mm a")}`;
@@ -50,9 +51,11 @@ const getPlatformColor = (platform: string, defaultColor = "#6366f1") => {
   return colorMap[platform] || defaultColor;
 };
 
-export function UpcomingClasses() {
+export function UpcomingClasses({
+  date,
+}: Readonly<{ date: DateRange | undefined }>) {
   const { data: events, isLoading } = useGetEventsQuery();
-  const comingEvents = getUpcomingClasses(events?.events || []);
+  const comingEvents = getUpcomingClasses(events?.events || [], date);
   console.log(comingEvents);
 
   return (

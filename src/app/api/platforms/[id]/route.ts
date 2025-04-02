@@ -41,6 +41,7 @@ export async function PUT(
 
   try {
     const updates = await req.json();
+
     const updatedPlatform = await Platform.findByIdAndUpdate(
       params.id,
       updates,
