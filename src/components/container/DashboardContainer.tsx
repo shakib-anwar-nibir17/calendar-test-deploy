@@ -1,7 +1,4 @@
 import React from "react";
-import { UpcomingClasses } from "../dashboard/upcoming-classes";
-
-import { RecentActivity } from "../dashboard/recent-activity";
 import { DashboardHeader } from "../dashboard/dashboard-header";
 import StatsPage from "../dashboard/stats";
 
@@ -11,10 +8,6 @@ const DashboardContainer = () => {
       <DashboardHeader />
       <div className="max-w-7xl mx-auto space-y-6 mt-2">
         <StatsPage />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <UpcomingClasses />
-          <RecentActivity />
-        </div>
       </div>
     </main>
   );

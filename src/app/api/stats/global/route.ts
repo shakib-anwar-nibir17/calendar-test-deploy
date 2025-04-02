@@ -1,5 +1,6 @@
 import { connectToMongoDB } from "@/lib/mongodb";
 import CalendarEventModel from "@/models/calendar-event.model";
+import Platform from "@/models/platform.model";
 import { startOfWeek, endOfWeek, parseISO } from "date-fns";
 import { NextResponse } from "next/server";
 
@@ -19,20 +20,21 @@ export async function GET(req: Request) {
       end: { $lte: end },
     }).populate("platform");
 
+    console.log("Events found:", events.length);
+
+    const completedClasses = events.filter(
+      (event) => event.status === "completed"
+    );
+
     let totalEarnings = 0;
     let totalHours = 0;
     const totalClasses = events.length;
-    const upcomingClasses = events.filter(
-      (event) => event.status !== "completed"
-    ).length;
-    const completedClasses = events.filter(
-      (event) => event.status === "completed"
-    ).length;
+    const upcomingClasses = events.length - completedClasses.length;
 
-    for (const event of events) {
+    for (const event of completedClasses) {
       if (!event.platform) continue;
-      const platform = event.platform;
-      totalEarnings += (event.hoursEngaged || 0) * (platform.hourlyRate || 0);
+      const platform = await Platform.findOne({ name: event.platform });
+      totalEarnings += (event.hoursEngaged || 0) * (platform?.hourlyRate || 0);
       totalHours += event.hoursEngaged || 0;
     }
 
@@ -42,7 +44,7 @@ export async function GET(req: Request) {
         totalHours,
         totalClasses,
         upcomingClasses,
-        completedClasses,
+        completedClasses: completedClasses.length,
       },
       { status: 200 }
     );

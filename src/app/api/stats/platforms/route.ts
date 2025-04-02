@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     const end = endDate ? parseISO(endDate) : endOfWeek(new Date());
 
     const platforms = await Platform.find().lean();
+    console.log("Platforms found:", platforms);
     const platformStats: Record<
       string,
       {
@@ -23,21 +24,29 @@ export async function GET(req: Request) {
         totalHours: number;
         upcomingClasses: number;
         completedClasses: number;
+        totalEarnings: number;
       }
     > = {};
 
     for (const platform of platforms) {
       const events = await CalendarEventModel.find({
-        platform: platform._id,
+        platform: platform.name,
         start: { $gte: start },
         end: { $lte: end },
       });
 
       const totalClasses = events.length;
-      const totalHours = events.reduce(
-        (sum, event) => sum + (event.hoursEngaged || 0),
-        0
-      );
+      const totalHours = events
+        .filter((event) => event.status === "completed") // Filter only completed events
+        .reduce((sum, event) => sum + (event.hoursEngaged || 0), 0);
+
+      const totalEarnings = events
+        .filter((event) => event.status === "completed")
+        .reduce(
+          (sum, event) => sum + (event.hoursEngaged || 0) * platform.hourlyRate,
+          0
+        );
+
       const upcomingClasses = events.filter(
         (event) => event.status !== "completed"
       ).length;
@@ -50,6 +59,7 @@ export async function GET(req: Request) {
         totalHours,
         upcomingClasses,
         completedClasses,
+        totalEarnings,
       };
     }
 
