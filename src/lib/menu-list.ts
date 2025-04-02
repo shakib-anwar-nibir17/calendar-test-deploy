@@ -60,7 +60,7 @@ export function getMenuList(pathname: string): Group[] {
         },
         {
           href: ROUTES.MANAGE_EVENTS,
-          label: "Manage Events",
+          label: "Manage Recurring Events",
           icon: Settings2,
           submenus: [],
         },
