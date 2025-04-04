@@ -4,6 +4,8 @@ import CalendarEventModel from "@/models/calendar-event.model";
 import mongoose from "mongoose";
 import { connectToMongoDB } from "@/lib/mongodb";
 import { generateRecurringEventsForEvent } from "@/lib/services/cron";
+import { addDays } from "date-fns";
+import Platform from "@/models/platform.model";
 
 // GET a specific event
 export async function GET(
@@ -58,7 +60,6 @@ export async function PUT(
 ) {
   try {
     // Ensure params is awaited properly
-
     const eventId = (await context.params).id;
 
     if (!eventId) {
@@ -79,18 +80,19 @@ export async function PUT(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Check if user wants to make this event recurring
+    // Parse the incoming data
     const data = await request.json();
-
     console.log("Received request:", data);
+
     const isRecurring = Boolean(data.isRecurring);
     let recurrencePattern = data.recurrencePattern;
 
+    // Default recurrence pattern if not provided
     if (isRecurring && !recurrencePattern) {
-      recurrencePattern = "weekly"; // Default recurrence pattern
+      recurrencePattern = "weekly";
     }
 
-    // Update the event
+    // Update the event with the new details
     const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
       eventId,
       { ...data, isRecurring, recurrencePattern },
@@ -104,9 +106,37 @@ export async function PUT(
       );
     }
 
-    // Generate future occurrences if event is converted to recurring
-    if (isRecurring && !existingEvent.isRecurring) {
-      await generateRecurringEventsForEvent(existingEvent._id);
+    // Handle the recurring event logic
+    const platform = await Platform.findOne({ name: updatedEvent.platform });
+
+    if (platform) {
+      // If payment type is "Upfront", generate 4 daily events
+      if (platform.paymentType === "Upfront") {
+        const instancesToGenerate = 4;
+
+        // Generate 4 daily events for Upfront payments
+        for (let i = 0; i < instancesToGenerate; i++) {
+          const instanceDate = addDays(new Date(updatedEvent.start), i);
+
+          await CalendarEventModel.create({
+            platform: updatedEvent.platform,
+            start: instanceDate,
+            end: addDays(instanceDate, updatedEvent.hoursEngaged), // Adjust the end time accordingly
+            backgroundColor: updatedEvent.backgroundColor,
+            displayStart: updatedEvent.displayStart,
+            displayEnd: updatedEvent.displayEnd,
+            hoursEngaged: updatedEvent.hoursEngaged,
+            status: "active",
+            allday: updatedEvent.allday,
+            timeZone: updatedEvent.timeZone,
+            isRecurring: false, // Child events are not recurring
+            parentEventId: updatedEvent._id,
+          });
+        }
+      } else if (isRecurring && !existingEvent.isRecurring) {
+        // If it's not Upfront and it's being converted to a recurring event
+        await generateRecurringEventsForEvent(updatedEvent._id);
+      }
     }
 
     return NextResponse.json(updatedEvent);
