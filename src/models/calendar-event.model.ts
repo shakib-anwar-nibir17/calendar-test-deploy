@@ -51,13 +51,30 @@ const calendarEventSchema = new Schema<CalendarEvent>(
 );
 
 calendarEventSchema.pre("save", function (next) {
-  if (this.end <= this.start && this.hoursEngaged !== undefined) {
-    // Calculate end time based on hours engaged
-    const startDate = new Date(this.start);
+  if (!this.start) {
+    console.warn(
+      `⚠️ Skipping event validation: Missing start time for ${this._id}`
+    );
+    return next();
+  }
+
+  if (this.hoursEngaged == null || this.hoursEngaged <= 0) {
+    console.warn(
+      `⚠️ Skipping end time calculation: Invalid hoursEngaged (${this.hoursEngaged}) for ${this._id}`
+    );
+    return next();
+  }
+
+  const startDate = new Date(this.start);
+
+  // Only set `end` if it's missing or incorrectly set
+  if (!this.end || new Date(this.end) <= startDate) {
     this.end = new Date(
       startDate.getTime() + this.hoursEngaged * 60 * 60 * 1000
     );
+    console.log(`✅ Updated end time for event ${this._id}: ${this.end}`);
   }
+
   next();
 });
 
