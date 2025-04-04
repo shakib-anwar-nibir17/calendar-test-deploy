@@ -14,7 +14,7 @@ export interface CalendarEvent extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   isRecurring?: boolean;
-  recurrencePattern?: "weekly" | "bi-weekly";
+  recurrencePattern?: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
   parentEventId?: string;
 }
 
@@ -37,7 +37,7 @@ const calendarEventSchema = new Schema<CalendarEvent>(
     isRecurring: { type: Boolean, default: false },
     recurrencePattern: {
       type: String,
-      enum: ["weekly", "bi-weekly"],
+      enum: ["Weekly", "Bi-Weekly", "Monthly", "Upfront"],
       required: function () {
         return this.isRecurring === true;
       },
