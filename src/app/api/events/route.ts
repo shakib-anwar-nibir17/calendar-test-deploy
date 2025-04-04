@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { addDays, addMonths, addWeeks } from "date-fns";
 import Platform from "@/models/platform.model";
 import mongoose from "mongoose";
-import { generateRecurringEvents } from "@/lib/services/cron";
 
 // GET all events
 export async function GET() {
@@ -252,11 +251,36 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Determine recurrence settings
-    const isRecurring = Boolean(data.isRecurring);
-    const recurrencePattern = isRecurring
-      ? data.recurrencePattern || "weekly"
-      : undefined;
+    // Get platform details
+    const platform = await Platform.findOne({ name: data.platform });
+    if (!platform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 400 }
+      );
+    }
+
+    let isRecurring = Boolean(data.isRecurring);
+    let recurrencePattern;
+
+    // Set the correct recurrence pattern based on payment type
+    switch (platform.paymentType) {
+      case "Weekly":
+        recurrencePattern = "weekly";
+        break;
+      case "Bi-Weekly":
+        recurrencePattern = "bi-weekly";
+        break;
+      case "Monthly":
+        recurrencePattern = "monthly";
+        break;
+      case "Upfront":
+        recurrencePattern = "daily";
+        break;
+      default:
+        isRecurring = false;
+        recurrencePattern = undefined;
+    }
 
     // Update the main event
     const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
@@ -272,34 +296,72 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Handle updates for child events if recurrence is enabled
+    // Handle child events if recurrence is updated
     if (isRecurring) {
-      const childEvents = await CalendarEventModel.find({
+      // Remove future child events and regenerate them
+      await CalendarEventModel.deleteMany({
         parentEventId: updatedEvent._id,
+        start: { $gt: new Date() },
       });
 
-      for (const event of childEvents) {
-        const newStart = new Date(event.start);
-        const newEnd = new Date(
-          newStart.getTime() + updatedEvent.hoursEngaged * 60 * 60 * 1000
-        );
+      const instancesToGenerate = 4; // 4 weeks for weekly/bi-weekly/monthly, 4 days for upfront
+      let intervalType: "weekly" | "bi-weekly" | "monthly" | "daily";
+      let intervalValue: number;
 
-        await CalendarEventModel.findByIdAndUpdate(event._id, {
-          platform: updatedEvent.platform,
-          start: newStart,
-          end: newEnd, // Dynamically set end time
-          hoursEngaged: updatedEvent.hoursEngaged,
-          allday: updatedEvent.allday,
-          timeZone: updatedEvent.timeZone,
-        });
+      switch (platform.paymentType) {
+        case "Bi-Weekly":
+          intervalType = "bi-weekly";
+          intervalValue = 2;
+          break;
+        case "Monthly":
+          intervalType = "monthly";
+          intervalValue = 1;
+          break;
+        case "Upfront":
+          intervalType = "daily";
+          intervalValue = 1;
+          break;
+        default:
+          intervalType = "weekly";
+          intervalValue = 1;
       }
 
-      // Generate new recurring events asynchronously
-      generateRecurringEvents().catch((err) =>
-        console.error("Error generating recurring events:", err)
-      );
+      let instanceDate = new Date(updatedEvent.start);
+
+      for (let i = 1; i <= instancesToGenerate; i++) {
+        switch (intervalType) {
+          case "bi-weekly":
+            instanceDate = addWeeks(instanceDate, intervalValue);
+            break;
+          case "monthly":
+            instanceDate = addMonths(instanceDate, intervalValue);
+            break;
+          case "daily":
+            instanceDate = addDays(instanceDate, intervalValue);
+            break;
+          default:
+            instanceDate = addWeeks(instanceDate, intervalValue);
+        }
+
+        if (instanceDate < new Date()) continue; // Prevent past event creation
+
+        await CalendarEventModel.create({
+          platform: updatedEvent.platform,
+          start: instanceDate,
+          end: instanceDate, // Adjusted in pre-save hook
+          backgroundColor: updatedEvent.backgroundColor,
+          displayStart: updatedEvent.displayStart,
+          displayEnd: updatedEvent.displayEnd,
+          hoursEngaged: updatedEvent.hoursEngaged,
+          status: "active",
+          allday: updatedEvent.allday,
+          timeZone: updatedEvent.timeZone,
+          isRecurring: false,
+          parentEventId: updatedEvent._id,
+        });
+      }
     } else if (existingEvent.isRecurring) {
-      // If event was previously recurring, determine how to handle child events
+      // If the event was previously recurring, handle child events based on user preference
       const updateChildren = searchParams.get("updateChildren") === "true";
 
       if (updateChildren) {
