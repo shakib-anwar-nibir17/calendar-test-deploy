@@ -63,7 +63,7 @@ export function EventModal({
     status: "create",
     timeZone: "UTC",
     isRecurring: false,
-    recurrencePattern: "weekly",
+    recurrencePattern: "Weekly",
   });
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
     null
@@ -99,7 +99,7 @@ export function EventModal({
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
         isRecurring: event.isRecurring || false,
-        recurrencePattern: event.recurrencePattern ?? "weekly",
+        recurrencePattern: event.recurrencePattern ?? "Weekly",
       });
     }
   }, [event, timeZone]);
@@ -165,9 +165,9 @@ export function EventModal({
       isRecurring: checked,
       recurrencePattern: checked
         ? (() => {
-            if (platform?.paymentType === "Weekly") return "weekly";
-            if (platform?.paymentType === "Bi-Weekly") return "bi-weekly";
-            return "weekly"; // Default fallback
+            if (platform?.paymentType === "Weekly") return "Weekly";
+            if (platform?.paymentType === "Bi-Weekly") return "Bi-Weekly";
+            return "Weekly"; // Default fallback
           })()
         : undefined,
     }));
@@ -257,7 +257,7 @@ export function EventModal({
                 checked={formData.isRecurring}
                 onCheckedChange={handleRecurringChange}
                 disabled={
-                  !["Weekly", "Bi-Weekly"].includes(
+                  !["Weekly", "Bi-Weekly", "Monthly", "Upfront"].includes(
                     selectedPlatform?.paymentType ?? ""
                   )
                 }

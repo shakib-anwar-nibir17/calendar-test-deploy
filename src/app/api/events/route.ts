@@ -68,16 +68,16 @@ export async function POST(request: Request) {
 
     switch (platform.paymentType) {
       case "Weekly":
-        recurrencePattern = recurrencePattern || "weekly";
+        recurrencePattern = recurrencePattern || "Weekly";
         break;
       case "Bi-Weekly":
-        recurrencePattern = recurrencePattern || "bi-weekly";
+        recurrencePattern = recurrencePattern || "Bi-Weekly";
         break;
       case "Monthly":
-        recurrencePattern = recurrencePattern || "monthly";
+        recurrencePattern = recurrencePattern || "Monthly";
         break;
       case "Upfront":
-        recurrencePattern = "daily"; // Upfront is always daily
+        recurrencePattern = "Upfront"; // Upfront is always daily
         break;
       default:
         isRecurring = false;
@@ -103,25 +103,25 @@ export async function POST(request: Request) {
     // Generate recurring instances if applicable
     if (isRecurring) {
       let instancesToGenerate = 4;
-      let intervalType: "weekly" | "bi-weekly" | "monthly" | "daily";
+      let intervalType: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
       let intervalValue: number;
 
       switch (platform.paymentType) {
         case "Bi-Weekly":
-          intervalType = "bi-weekly";
+          intervalType = "Bi-Weekly";
           intervalValue = 2;
           break;
         case "Monthly":
-          intervalType = "monthly";
+          intervalType = "Monthly";
           intervalValue = 1;
           break;
         case "Upfront":
-          intervalType = "daily";
+          intervalType = "Upfront";
           intervalValue = 1;
           instancesToGenerate = 4; // Only 4 daily events
           break;
         default:
-          intervalType = "weekly";
+          intervalType = "Weekly";
           intervalValue = 1;
       }
 
@@ -129,13 +129,13 @@ export async function POST(request: Request) {
 
       for (let i = 1; i <= instancesToGenerate; i++) {
         switch (intervalType) {
-          case "bi-weekly":
+          case "Bi-Weekly":
             instanceDate = addWeeks(instanceDate, intervalValue);
             break;
-          case "monthly":
+          case "Monthly":
             instanceDate = addMonths(instanceDate, intervalValue);
             break;
-          case "daily":
+          case "Upfront":
             instanceDate = addDays(instanceDate, intervalValue);
             break;
           default:
@@ -266,16 +266,16 @@ export async function PUT(request: Request) {
     // Set the correct recurrence pattern based on payment type
     switch (platform.paymentType) {
       case "Weekly":
-        recurrencePattern = "weekly";
+        recurrencePattern = "Weekly";
         break;
       case "Bi-Weekly":
-        recurrencePattern = "bi-weekly";
+        recurrencePattern = "Bi-Weekly";
         break;
       case "Monthly":
-        recurrencePattern = "monthly";
+        recurrencePattern = "Monthly";
         break;
       case "Upfront":
-        recurrencePattern = "daily";
+        recurrencePattern = "Upfront"; // Upfront is always daily
         break;
       default:
         isRecurring = false;
@@ -305,24 +305,24 @@ export async function PUT(request: Request) {
       });
 
       const instancesToGenerate = 4; // 4 weeks for weekly/bi-weekly/monthly, 4 days for upfront
-      let intervalType: "weekly" | "bi-weekly" | "monthly" | "daily";
+      let intervalType: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
       let intervalValue: number;
 
       switch (platform.paymentType) {
         case "Bi-Weekly":
-          intervalType = "bi-weekly";
+          intervalType = "Bi-Weekly";
           intervalValue = 2;
           break;
         case "Monthly":
-          intervalType = "monthly";
+          intervalType = "Monthly";
           intervalValue = 1;
           break;
         case "Upfront":
-          intervalType = "daily";
+          intervalType = "Upfront";
           intervalValue = 1;
           break;
         default:
-          intervalType = "weekly";
+          intervalType = "Weekly";
           intervalValue = 1;
       }
 
@@ -330,13 +330,13 @@ export async function PUT(request: Request) {
 
       for (let i = 1; i <= instancesToGenerate; i++) {
         switch (intervalType) {
-          case "bi-weekly":
+          case "Bi-Weekly":
             instanceDate = addWeeks(instanceDate, intervalValue);
             break;
-          case "monthly":
+          case "Monthly":
             instanceDate = addMonths(instanceDate, intervalValue);
             break;
-          case "daily":
+          case "Upfront":
             instanceDate = addDays(instanceDate, intervalValue);
             break;
           default:

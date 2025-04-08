@@ -57,7 +57,7 @@ export default function Calendar() {
       end: selectInfo.endStr,
       allDay: selectInfo.allDay,
       isRecurring: false,
-      recurrencePattern: "weekly",
+      recurrencePattern: "Weekly",
     });
     setIsModalOpen(true);
   };
