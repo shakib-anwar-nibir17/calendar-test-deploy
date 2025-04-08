@@ -74,7 +74,6 @@ calendarEventSchema.pre("save", function (next) {
     );
     console.log(`✅ Updated end time for event ${this._id}: ${this.end}`);
   }
-
   next();
 });
 
