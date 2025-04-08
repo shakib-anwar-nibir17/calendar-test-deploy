@@ -5,15 +5,23 @@ import { startOfWeek, endOfWeek, parseISO } from "date-fns";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
+  console.log("Fetching global stats...");
   await connectToMongoDB();
 
   try {
+    console.log("Request URL:", req.url);
     const searchParams = new URLSearchParams(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
+    console.log("Start date:", startDate);
+    console.log("End date:", endDate);
+
     const start = startDate ? parseISO(startDate) : startOfWeek(new Date());
     const end = endDate ? parseISO(endDate) : endOfWeek(new Date());
+
+    console.log("Start:", start);
+    console.log("End:", end);
 
     const events = await CalendarEventModel.find({
       start: { $gte: start },
@@ -37,6 +45,10 @@ export async function GET(req: Request) {
       totalEarnings += (event.hoursEngaged || 0) * (platform?.hourlyRate || 0);
       totalHours += event.hoursEngaged || 0;
     }
+
+    console.log("Completed Classes:", completedClasses.length);
+    console.log("Total Earnings:", totalEarnings);
+    console.log("Total Hours:", totalHours);
 
     return NextResponse.json(
       {
