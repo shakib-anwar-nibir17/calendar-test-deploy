@@ -223,7 +223,7 @@ export function EventForm({ event, onSubmit, timeZone }: EventModalProps) {
                 checked={formData.isRecurring}
                 onCheckedChange={handleRecurringChange}
                 disabled={
-                  !["Weekly", "Bi-Weekly"].includes(
+                  !["Weekly", "Bi-Weekly", "Monthly", "Upfront"].includes(
                     selectedPlatform?.paymentType ?? ""
                   )
                 }
