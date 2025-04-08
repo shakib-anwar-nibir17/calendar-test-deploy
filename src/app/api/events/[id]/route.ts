@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import CalendarEventModel from "@/models/calendar-event.model";
 import mongoose from "mongoose";
 import { connectToMongoDB } from "@/lib/mongodb";
-import { addDays, addMonths, addWeeks } from "date-fns";
 import Platform from "@/models/platform.model";
 
 // GET a specific event
@@ -59,8 +58,8 @@ export async function PUT(
 ) {
   try {
     const { params } = context;
-    console.log(params.id); // ✅ Ensure `params` is accessed from `context`
     const id = params?.id;
+
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid event ID format" },
@@ -69,12 +68,11 @@ export async function PUT(
     }
 
     const data = await request.json();
-    console.log("Received update:", data);
+    console.log("🛠️ Updating event:", id, data);
 
     await connectToMongoDB();
 
-    const eventId = id;
-    const existingEvent = await CalendarEventModel.findById(eventId);
+    const existingEvent = await CalendarEventModel.findById(id);
     if (!existingEvent) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
@@ -87,7 +85,7 @@ export async function PUT(
       );
     }
 
-    // Determine updated recurrence
+    // Determine updated recurrence values
     let isRecurring = Boolean(data.isRecurring);
     let recurrencePattern = data.recurrencePattern;
 
@@ -105,7 +103,7 @@ export async function PUT(
         recurrencePattern = undefined;
     }
 
-    // Update the main event
+    // Update only the main event — leave recurring children untouched
     existingEvent.platform = data.platform;
     existingEvent.start = data.start;
     existingEvent.end = data.end;
@@ -120,70 +118,6 @@ export async function PUT(
     existingEvent.recurrencePattern = recurrencePattern;
 
     await existingEvent.save();
-
-    // Delete old recurring children
-    await CalendarEventModel.deleteMany({ parentEventId: eventId });
-
-    // Re-generate recurring children if still recurring
-    if (isRecurring) {
-      let instancesToGenerate = 4;
-      let intervalValue = 1;
-      let intervalType: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
-
-      switch (platform.paymentType) {
-        case "Bi-Weekly":
-          intervalType = "Bi-Weekly";
-          intervalValue = 2;
-          break;
-        case "Monthly":
-          intervalType = "Monthly";
-          break;
-        case "Upfront":
-          intervalType = "Upfront";
-          intervalValue = 1;
-          instancesToGenerate = 4;
-          break;
-        default:
-          intervalType = "Weekly";
-          intervalValue = 1;
-      }
-
-      let instanceDate = new Date(data.start);
-
-      for (let i = 1; i <= instancesToGenerate; i++) {
-        switch (intervalType) {
-          case "Bi-Weekly":
-            instanceDate = addWeeks(instanceDate, intervalValue);
-            break;
-          case "Monthly":
-            instanceDate = addMonths(instanceDate, intervalValue);
-            break;
-          case "Upfront":
-            instanceDate = addDays(instanceDate, intervalValue);
-            break;
-          default:
-            instanceDate = addWeeks(instanceDate, intervalValue);
-        }
-
-        if (instanceDate < new Date()) continue;
-
-        await CalendarEventModel.create({
-          platform: data.platform,
-          start: instanceDate,
-          end: instanceDate, // Adjust in pre-save hook
-          backgroundColor: data.backgroundColor,
-          displayStart: data.displayStart,
-          displayEnd: data.displayEnd,
-          hoursEngaged: data.hoursEngaged,
-          status: "active",
-          allday: data.allday,
-          timeZone: data.timeZone,
-          isRecurring: false,
-          parentEventId: existingEvent._id,
-          recurrencePattern,
-        });
-      }
-    }
 
     const updatedEvent = {
       id: existingEvent._id.toString(),
