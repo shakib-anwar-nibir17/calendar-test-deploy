@@ -19,7 +19,7 @@ import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
-import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
+
 import { toZonedTime } from "date-fns-tz";
 import { Switch } from "../ui/switch";
 
@@ -38,7 +38,6 @@ interface EventModalProps {
   readonly onDelete: (id: string) => void;
   readonly mode: "add" | "edit";
   readonly timeZone: string;
-  readonly refetch: () => void;
 }
 
 export function EventModal({
@@ -49,7 +48,6 @@ export function EventModal({
   onDelete,
   mode,
   timeZone,
-  refetch,
 }: EventModalProps) {
   const { data: platforms } = useGetPlatformsQuery();
   const [formData, setFormData] = useState<CalendarEvent>({
@@ -63,7 +61,7 @@ export function EventModal({
     status: "create",
     timeZone: "UTC",
     isRecurring: false,
-    recurrencePattern: "weekly",
+    recurrencePattern: "Weekly",
   });
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
     null
@@ -76,8 +74,6 @@ export function EventModal({
     const endDate = addMinutes(startDate, hoursEngaged * 60);
     return endDate.toISOString();
   };
-
-  const [updateEvent] = useUpdateEventMutation();
 
   useEffect(() => {
     if (event) {
@@ -98,8 +94,8 @@ export function EventModal({
         status: event.status || "create",
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
-        isRecurring: event.isRecurring ?? false,
-        recurrencePattern: event.recurrencePattern ?? "weekly",
+        isRecurring: event.isRecurring || false,
+        recurrencePattern: event.recurrencePattern ?? "Weekly",
       });
     }
   }, [event, timeZone]);
@@ -138,16 +134,8 @@ export function EventModal({
     setFormData((prev) => ({
       ...prev,
       status: checked ? "completed" : "create",
-    }));
-
-    const response = await updateEvent({
-      id: formData.id,
-      status: "completed",
       backgroundColor: "#A0C878",
-    });
-    if (response.error) return;
-    refetch();
-    onClose();
+    }));
   };
 
   const handleHoursEngagedChange = (value: string) => {
@@ -165,9 +153,11 @@ export function EventModal({
       isRecurring: checked,
       recurrencePattern: checked
         ? (() => {
-            if (platform?.paymentType === "Weekly") return "weekly";
-            if (platform?.paymentType === "Bi-Weekly") return "bi-weekly";
-            return "weekly"; // Default fallback
+            if (platform?.paymentType === "Weekly") return "Weekly";
+            if (platform?.paymentType === "Bi-Weekly") return "Bi-Weekly";
+            if (platform?.paymentType === "Monthly") return "Monthly";
+            if (platform?.paymentType === "Upfront") return "Upfront";
+            return "Weekly"; // Default fallback
           })()
         : undefined,
     }));
@@ -183,6 +173,8 @@ export function EventModal({
       end: endLocal,
     });
   };
+
+  console.log(event);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -255,7 +247,7 @@ export function EventModal({
                 checked={formData.isRecurring}
                 onCheckedChange={handleRecurringChange}
                 disabled={
-                  !["Weekly", "Bi-Weekly"].includes(
+                  !["Weekly", "Bi-Weekly", "Monthly", "Upfront"].includes(
                     selectedPlatform?.paymentType ?? ""
                   )
                 }

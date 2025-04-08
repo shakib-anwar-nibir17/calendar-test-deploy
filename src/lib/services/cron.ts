@@ -1,11 +1,9 @@
 import { CronJob } from "cron";
-import { addWeeks, addDays, format } from "date-fns";
+import { addWeeks, addHours, addMonths, addDays } from "date-fns";
 import { connectToMongoDB } from "../mongodb";
 
 import CalendarEventModel from "@/models/calendar-event.model";
-import Platform from "@/models/platform.model";
 
-// Function to generate recurring events
 export async function generateRecurringEvents() {
   console.log(
     "Running recurring events generation job:",
@@ -15,89 +13,191 @@ export async function generateRecurringEvents() {
   try {
     await connectToMongoDB();
 
-    // Find all recurring events that don't have child events for the next 4 weeks
+    const now = new Date();
+
+    // Step 1: Find all parent recurring events
     const recurringEvents = await CalendarEventModel.find({
       isRecurring: true,
-      // Only include events from the last 3 months to avoid processing very old events
       start: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
     });
 
     console.log(`Found ${recurringEvents.length} recurring events to process`);
 
+    // Step 2: Process each parent event
     for (const event of recurringEvents) {
-      // Get the platform to check payment type
-      const platform = await Platform.findOne({ name: event.platform });
+      console.log(
+        `Processing event ${event._id} - Platform: ${event.platform} - Start: ${event.start}`
+      );
 
-      if (!platform) {
-        console.error(`Platform not found for event: ${event._id}`);
-        continue;
-      }
-
-      // Only process weekly and bi-weekly payment types
-      if (
-        platform.paymentType !== "Weekly" &&
-        platform.paymentType !== "Bi-Weekly"
-      ) {
-        continue;
-      }
-
-      // Check if we already have child events for this recurring event
-      const existingChildEvents = await CalendarEventModel.find({
+      // Step 3: Get all child events for the parent event
+      const childEvents = await CalendarEventModel.find({
         parentEventId: event._id,
-      });
+        start: { $gte: now }, // Only consider future child events
+      }).sort({ start: -1 }); // Sort by latest date first
 
-      // Calculate how many instances we should have
-      const now = new Date();
-      const startDate = new Date(event.start);
-      const weeksToGenerate = 4; // Generate events for the next 4 weeks
+      // If no child events exist, create the first one
+      const latestChild = childEvents[0]; // The latest child event
 
-      // Determine the interval based on recurrence pattern or platform payment type
-      const interval =
-        event.recurrencePattern === "bi-weekly" ||
-        platform.paymentType === "Bi-Weekly"
-          ? 2
-          : 1;
+      // Step 4: Determine the next recurrence date based on the parent event's recurrence pattern
+      let nextRecurrenceDate: Date | null = null;
+      if (latestChild) {
+        switch (event.recurrencePattern) {
+          case "Weekly":
+            nextRecurrenceDate = addWeeks(new Date(latestChild.start), 1);
+            break;
+          case "Bi-Weekly":
+            nextRecurrenceDate = addWeeks(new Date(latestChild.start), 2);
+            break;
+          case "Monthly":
+            nextRecurrenceDate = addMonths(new Date(latestChild.start), 1);
+            break;
+          case "Upfront":
+            nextRecurrenceDate = addDays(new Date(latestChild.start), 1); // Assuming upfront events are 1 day apart
+            break;
+          default:
+            console.warn(
+              `Unsupported recurrence pattern for event ${event._id}: ${event.recurrencePattern}`
+            );
+        }
+      }
 
-      // Generate new instances if needed
-      for (let i = 1; i <= weeksToGenerate; i++) {
-        // Calculate the date for this instance
-        const instanceDate = addWeeks(startDate, i * interval);
+      // Step 5: If the next recurrence date is valid, create a new event
+      if (nextRecurrenceDate && nextRecurrenceDate > now) {
+        // Ensure no duplicates by checking if the next date already exists
+        const existingChildEvent = await CalendarEventModel.findOne({
+          parentEventId: event._id,
+          start: nextRecurrenceDate,
+        });
 
-        // Skip if this instance is in the past
-        if (instanceDate < now) continue;
+        if (!existingChildEvent) {
+          try {
+            // Create a new child event for the calculated recurrence date
+            await CalendarEventModel.create({
+              platform: event.platform,
+              start: nextRecurrenceDate,
+              end: nextRecurrenceDate, // Adjust in pre-hook if necessary
+              hoursEngaged: event.hoursEngaged,
+              status: "active", // Or inherit the parent status if needed
+              allDay: event.allDay,
+              timeZone: event.timeZone, // Same timezone as parent
+              isRecurring: false, // This is a child event, not recurring
+              parentEventId: event._id,
+              backgroundColor: event.backgroundColor,
+            });
 
-        // Check if we already have an event for this date
-        const dateString = format(instanceDate, "yyyy-MM-dd");
-        const existingEvent = existingChildEvents.find(
-          (child) => format(new Date(child.start), "yyyy-MM-dd") === dateString
-        );
-
-        if (!existingEvent) {
-          // Create a new event instance
-          const newEvent = new CalendarEventModel({
-            platform: event.platform,
-            start: instanceDate,
-            end: addDays(instanceDate, 0), // Will be adjusted by pre-save hook
-            hoursEngaged: event.hoursEngaged,
-            status: "active",
-            allDay: event.allDay,
-            timeZone: event.timeZone,
-            isRecurring: false, // Child events are not recurring themselves
-            parentEventId: event._id,
-            backgroundColor: event.backgroundColor,
-          });
-
-          await newEvent.save();
+            console.log(
+              `✅ Created event for ${
+                event._id
+              } on ${nextRecurrenceDate.toISOString()}`
+            );
+          } catch (error) {
+            console.error(
+              `❌ Failed to create event for ${
+                event._id
+              } on ${nextRecurrenceDate.toISOString()}`,
+              error
+            );
+          }
+        } else {
           console.log(
-            `Created new recurring instance for event ${event._id} on ${dateString}`
+            `⚠️ Event for ${
+              event._id
+            } already exists on ${nextRecurrenceDate.toISOString()}`
           );
         }
+      } else {
+        console.log(
+          `⚠️ Skipping generation for ${event._id}, no valid next recurrence date.`
+        );
       }
     }
 
-    console.log("Completed recurring events generation");
+    console.log("✅ Completed recurring events generation");
   } catch (error) {
-    console.error("Error generating recurring events:", error);
+    console.error("❌ Error in recurring events job:", error);
+  }
+}
+
+export async function generateRecurringEventsForEvent(eventId: string) {
+  try {
+    // Fetch the event
+    const event = await CalendarEventModel.findById(eventId);
+    if (!event) {
+      return { message: "Event not found" };
+    }
+
+    if (event.isRecurring && !event.parentEventId) {
+      // Parent event logic: Check for 4 weeks of child events
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: event._id,
+      });
+
+      return {
+        message: `Parent event has ${childEvents.length} child events for recurring`,
+      };
+    } else if (event.parentEventId) {
+      // Child event logic: Find parent and generate additional events
+      const parentEvent = await CalendarEventModel.findById(
+        event.parentEventId
+      );
+      if (!parentEvent) {
+        return { message: "Parent event not found" };
+      }
+
+      // Get all children to determine the sequence position
+      const siblingEvents = await CalendarEventModel.find({
+        parentEventId: parentEvent._id,
+      }).sort({ start: 1 });
+
+      const childIndex = siblingEvents.findIndex((e) =>
+        e._id.equals(event._id)
+      );
+      if (childIndex === -1) {
+        return { message: "Child event not found in sequence" };
+      }
+
+      const eventsToGenerate = childIndex + 1;
+      const startDate = new Date(parentEvent.start);
+      const interval = parentEvent.recurrencePattern === "bi-weekly" ? 2 : 1;
+      const now = new Date();
+
+      let generatedCount = 0;
+      for (let i = 1; i <= eventsToGenerate; i++) {
+        const instanceDate = addWeeks(
+          startDate,
+          (siblingEvents.length + i) * interval
+        );
+        if (instanceDate < now) continue;
+
+        const existingEvent = await CalendarEventModel.findOne({
+          parentEventId: parentEvent._id,
+          start: instanceDate,
+        });
+
+        if (!existingEvent) {
+          await new CalendarEventModel({
+            platform: parentEvent.platform,
+            start: instanceDate,
+            end: addHours(instanceDate, parentEvent.hoursEngaged),
+            hoursEngaged: parentEvent.hoursEngaged,
+            status: "active",
+            allDay: parentEvent.allDay,
+            timeZone: parentEvent.timeZone,
+            isRecurring: false,
+            parentEventId: parentEvent._id,
+            backgroundColor: parentEvent.backgroundColor,
+          }).save();
+          generatedCount++;
+        }
+      }
+
+      return { message: `Generated ${generatedCount} additional events` };
+    }
+
+    return { message: "Event is neither a parent nor a child" };
+  } catch (error) {
+    console.error("Error handling event edit:", error);
+    return { message: "Error processing event" };
   }
 }
 

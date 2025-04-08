@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarEvent } from "@/store/states/calender";
 import { getRecentClasses } from "@/utils/event-filter";
 import { useGetEventsQuery } from "@/store/services/calendar-event.service";
+import { DateRange } from "react-day-picker";
 
 // Types
 // Helper function to format date display
@@ -59,11 +60,13 @@ const getStatusColor = (status: CalendarEvent["status"]) => {
   }
 };
 
-export function RecentActivity() {
+export function RecentActivity({
+  date,
+}: Readonly<{ date: DateRange | undefined }>) {
   const { data: events, isLoading, error } = useGetEventsQuery();
 
   // Process and sort events
-  const sortedEvents = getRecentClasses(events?.events || []);
+  const sortedEvents = getRecentClasses(events?.events || [], date);
   console.log(sortedEvents);
 
   if (isLoading) return <p>Loading events...</p>;

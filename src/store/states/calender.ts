@@ -15,7 +15,7 @@ export interface CalendarEvent {
   createdAt?: string;
   updatedAt?: string;
   isRecurring?: boolean;
-  recurrencePattern?: "weekly" | "bi-weekly";
+  recurrencePattern?: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
   parentEventId?: string;
 }
 

@@ -1,10 +1,9 @@
 import { connectToMongoDB } from "@/lib/mongodb";
 import CalendarEventModel from "@/models/calendar-event.model";
 import { NextResponse } from "next/server";
-import { addWeeks } from "date-fns";
+import { addDays, addMonths, addWeeks } from "date-fns";
 import Platform from "@/models/platform.model";
 import mongoose from "mongoose";
-import { generateRecurringEvents } from "@/lib/services/cron";
 
 // GET all events
 export async function GET() {
@@ -57,23 +56,35 @@ export async function POST(request: Request) {
     let isRecurring = Boolean(data.isRecurring);
     let recurrencePattern = data.recurrencePattern;
 
-    // If recurring, validate platform payment type
-    if (isRecurring) {
-      const platform = await Platform.findOne({ name: data.platform });
+    // Validate platform and determine recurrence type
+    const platform = await Platform.findOne({ name: data.platform });
 
-      if (
-        !platform ||
-        (platform.paymentType !== "Weekly" &&
-          platform.paymentType !== "Bi-Weekly")
-      ) {
-        isRecurring = false;
-        recurrencePattern = undefined;
-      } else if (!recurrencePattern) {
-        recurrencePattern =
-          platform.paymentType === "Weekly" ? "weekly" : "bi-weekly";
-      }
+    if (!platform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 400 }
+      );
     }
 
+    switch (platform.paymentType) {
+      case "Weekly":
+        recurrencePattern = recurrencePattern || "Weekly";
+        break;
+      case "Bi-Weekly":
+        recurrencePattern = recurrencePattern || "Bi-Weekly";
+        break;
+      case "Monthly":
+        recurrencePattern = recurrencePattern || "Monthly";
+        break;
+      case "Upfront":
+        recurrencePattern = "Upfront"; // Upfront is always daily
+        break;
+      default:
+        isRecurring = false;
+        recurrencePattern = undefined;
+    }
+
+    // Create the main event
     const event = await CalendarEventModel.create({
       platform: data.platform,
       start: data.start,
@@ -89,18 +100,54 @@ export async function POST(request: Request) {
       recurrencePattern,
     });
 
-    // If this is a recurring event, generate future instances
+    // Generate recurring instances if applicable
     if (isRecurring) {
-      const interval = recurrencePattern === "bi-weekly" ? 2 : 1;
-      const weeksToGenerate = 4;
+      let instancesToGenerate = 4;
+      let intervalType: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
+      let intervalValue: number;
 
-      for (let i = 1; i <= weeksToGenerate; i++) {
-        const instanceDate = addWeeks(new Date(data.start), i * interval);
+      switch (platform.paymentType) {
+        case "Bi-Weekly":
+          intervalType = "Bi-Weekly";
+          intervalValue = 2;
+          break;
+        case "Monthly":
+          intervalType = "Monthly";
+          intervalValue = 1;
+          break;
+        case "Upfront":
+          intervalType = "Upfront";
+          intervalValue = 1;
+          instancesToGenerate = 4; // Only 4 daily events
+          break;
+        default:
+          intervalType = "Weekly";
+          intervalValue = 1;
+      }
+
+      let instanceDate = new Date(data.start);
+
+      for (let i = 1; i <= instancesToGenerate; i++) {
+        switch (intervalType) {
+          case "Bi-Weekly":
+            instanceDate = addWeeks(instanceDate, intervalValue);
+            break;
+          case "Monthly":
+            instanceDate = addMonths(instanceDate, intervalValue);
+            break;
+          case "Upfront":
+            instanceDate = addDays(instanceDate, intervalValue);
+            break;
+          default:
+            instanceDate = addWeeks(instanceDate, intervalValue);
+        }
+
+        if (instanceDate < new Date()) continue; // Prevent past events
 
         await CalendarEventModel.create({
           platform: data.platform,
           start: instanceDate,
-          end: addWeeks(new Date(data.end), i * interval),
+          end: instanceDate, // Adjusted in pre-save hook
           backgroundColor: data.backgroundColor,
           displayStart: data.displayStart,
           displayEnd: data.displayEnd,
@@ -108,8 +155,9 @@ export async function POST(request: Request) {
           status: "active",
           allday: data.allday,
           timeZone: data.timeZone,
-          isRecurring: false, // Child events are not recurring
+          isRecurring: false,
           parentEventId: event._id,
+          recurrencePattern: event.recurrencePattern,
         });
       }
     }
@@ -134,7 +182,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(transformedEvent, { status: 201 });
   } catch (error) {
-    console.error("Failed to create event:", error);
+    console.error("❌ Failed to create event:", error);
     return NextResponse.json(
       { error: "Failed to create event" },
       { status: 500 }
@@ -204,11 +252,36 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Determine recurrence settings
-    const isRecurring = Boolean(data.isRecurring);
-    const recurrencePattern = isRecurring
-      ? data.recurrencePattern || "weekly"
-      : undefined;
+    // Get platform details
+    const platform = await Platform.findOne({ name: data.platform });
+    if (!platform) {
+      return NextResponse.json(
+        { error: "Platform not found" },
+        { status: 400 }
+      );
+    }
+
+    let isRecurring = Boolean(data.isRecurring);
+    let recurrencePattern;
+
+    // Set the correct recurrence pattern based on payment type
+    switch (platform.paymentType) {
+      case "Weekly":
+        recurrencePattern = "Weekly";
+        break;
+      case "Bi-Weekly":
+        recurrencePattern = "Bi-Weekly";
+        break;
+      case "Monthly":
+        recurrencePattern = "Monthly";
+        break;
+      case "Upfront":
+        recurrencePattern = "Upfront"; // Upfront is always daily
+        break;
+      default:
+        isRecurring = false;
+        recurrencePattern = undefined;
+    }
 
     // Update the main event
     const updatedEvent = await CalendarEventModel.findByIdAndUpdate(
@@ -224,34 +297,72 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Handle updates for child events if recurrence is enabled
+    // Handle child events if recurrence is updated
     if (isRecurring) {
-      const childEvents = await CalendarEventModel.find({
+      // Remove future child events and regenerate them
+      await CalendarEventModel.deleteMany({
         parentEventId: updatedEvent._id,
+        start: { $gt: new Date() },
       });
 
-      for (const event of childEvents) {
-        const newStart = new Date(event.start);
-        const newEnd = new Date(
-          newStart.getTime() + updatedEvent.hoursEngaged * 60 * 60 * 1000
-        );
+      const instancesToGenerate = 4; // 4 weeks for weekly/bi-weekly/monthly, 4 days for upfront
+      let intervalType: "Weekly" | "Bi-Weekly" | "Monthly" | "Upfront";
+      let intervalValue: number;
 
-        await CalendarEventModel.findByIdAndUpdate(event._id, {
-          platform: updatedEvent.platform,
-          start: newStart,
-          end: newEnd, // Dynamically set end time
-          hoursEngaged: updatedEvent.hoursEngaged,
-          allday: updatedEvent.allday,
-          timeZone: updatedEvent.timeZone,
-        });
+      switch (platform.paymentType) {
+        case "Bi-Weekly":
+          intervalType = "Bi-Weekly";
+          intervalValue = 2;
+          break;
+        case "Monthly":
+          intervalType = "Monthly";
+          intervalValue = 1;
+          break;
+        case "Upfront":
+          intervalType = "Upfront";
+          intervalValue = 1;
+          break;
+        default:
+          intervalType = "Weekly";
+          intervalValue = 1;
       }
 
-      // Generate new recurring events asynchronously
-      generateRecurringEvents().catch((err) =>
-        console.error("Error generating recurring events:", err)
-      );
+      let instanceDate = new Date(updatedEvent.start);
+
+      for (let i = 1; i <= instancesToGenerate; i++) {
+        switch (intervalType) {
+          case "Bi-Weekly":
+            instanceDate = addWeeks(instanceDate, intervalValue);
+            break;
+          case "Monthly":
+            instanceDate = addMonths(instanceDate, intervalValue);
+            break;
+          case "Upfront":
+            instanceDate = addDays(instanceDate, intervalValue);
+            break;
+          default:
+            instanceDate = addWeeks(instanceDate, intervalValue);
+        }
+
+        if (instanceDate < new Date()) continue; // Prevent past event creation
+
+        await CalendarEventModel.create({
+          platform: updatedEvent.platform,
+          start: instanceDate,
+          end: instanceDate, // Adjusted in pre-save hook
+          backgroundColor: updatedEvent.backgroundColor,
+          displayStart: updatedEvent.displayStart,
+          displayEnd: updatedEvent.displayEnd,
+          hoursEngaged: updatedEvent.hoursEngaged,
+          status: "active",
+          allday: updatedEvent.allday,
+          timeZone: updatedEvent.timeZone,
+          isRecurring: false,
+          parentEventId: updatedEvent._id,
+        });
+      }
     } else if (existingEvent.isRecurring) {
-      // If event was previously recurring, determine how to handle child events
+      // If the event was previously recurring, handle child events based on user preference
       const updateChildren = searchParams.get("updateChildren") === "true";
 
       if (updateChildren) {
