@@ -157,6 +157,7 @@ export async function POST(request: Request) {
           timeZone: data.timeZone,
           isRecurring: false,
           parentEventId: event._id,
+          recurrencePattern: event.recurrencePattern,
         });
       }
     }

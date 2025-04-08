@@ -1,9 +1,8 @@
 import { CronJob } from "cron";
-import { addWeeks, format, addHours } from "date-fns";
+import { addWeeks, addHours, addMonths, addDays } from "date-fns";
 import { connectToMongoDB } from "../mongodb";
 
 import CalendarEventModel from "@/models/calendar-event.model";
-import Platform from "@/models/platform.model";
 
 export async function generateRecurringEvents() {
   console.log(
@@ -15,75 +14,101 @@ export async function generateRecurringEvents() {
     await connectToMongoDB();
 
     const now = new Date();
-    const futureDate = addWeeks(now, 4); // Generate for the next 4 weeks
 
-    // Find all recurring events from the last 3 months that need child events
+    // Step 1: Find all parent recurring events
     const recurringEvents = await CalendarEventModel.find({
       isRecurring: true,
-      start: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }, // Avoid old events
+      start: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
     });
 
     console.log(`Found ${recurringEvents.length} recurring events to process`);
 
+    // Step 2: Process each parent event
     for (const event of recurringEvents) {
-      // Get platform details
-      const platform = await Platform.findOne({ name: event.platform });
-
-      if (!platform) {
-        console.warn(`Skipping event ${event._id} - Platform not found`);
-        continue;
-      }
-
-      if (!["Weekly", "Bi-Weekly"].includes(platform.paymentType)) {
-        continue; // Only process if the payment type is Weekly or Bi-Weekly
-      }
-
-      const interval =
-        platform.paymentType === "Bi-Weekly" ||
-        event.recurrencePattern === "bi-weekly"
-          ? 2
-          : 1;
-
-      // Fetch existing child events only within the 4-week range
-      const existingChildDates = new Set(
-        (
-          await CalendarEventModel.find({
-            parentEventId: event._id,
-            start: { $gte: now, $lte: futureDate },
-          }).select("start")
-        ).map((child) => format(new Date(child.start), "yyyy-MM-dd"))
+      console.log(
+        `Processing event ${event._id} - Platform: ${event.platform} - Start: ${event.start}`
       );
 
-      // Generate missing instances
-      for (let i = 1; i <= 4; i++) {
-        const instanceDate = addWeeks(event.start, i * interval);
+      // Step 3: Get all child events for the parent event
+      const childEvents = await CalendarEventModel.find({
+        parentEventId: event._id,
+        start: { $gte: now }, // Only consider future child events
+      }).sort({ start: -1 }); // Sort by latest date first
 
-        if (instanceDate < now) continue; // Skip past events
+      // If no child events exist, create the first one
+      const latestChild = childEvents[0]; // The latest child event
 
-        const dateString = format(instanceDate, "yyyy-MM-dd");
-        if (existingChildDates.has(dateString)) continue; // Skip if already exists
+      // Step 4: Determine the next recurrence date based on the parent event's recurrence pattern
+      let nextRecurrenceDate: Date | null = null;
+      if (latestChild) {
+        switch (event.recurrencePattern) {
+          case "Weekly":
+            nextRecurrenceDate = addWeeks(new Date(latestChild.start), 1);
+            break;
+          case "Bi-Weekly":
+            nextRecurrenceDate = addWeeks(new Date(latestChild.start), 2);
+            break;
+          case "Monthly":
+            nextRecurrenceDate = addMonths(new Date(latestChild.start), 1);
+            break;
+          case "Upfront":
+            nextRecurrenceDate = addDays(new Date(latestChild.start), 1); // Assuming upfront events are 1 day apart
+            break;
+          default:
+            console.warn(
+              `Unsupported recurrence pattern for event ${event._id}: ${event.recurrencePattern}`
+            );
+        }
+      }
 
-        try {
-          await CalendarEventModel.create({
-            platform: event.platform,
-            start: instanceDate,
-            end: instanceDate, // Presumed adjusted in pre-save hook
-            hoursEngaged: event.hoursEngaged,
-            status: "active",
-            allDay: event.allDay,
-            timeZone: event.timeZone,
-            isRecurring: false,
-            parentEventId: event._id,
-            backgroundColor: event.backgroundColor,
-          });
+      // Step 5: If the next recurrence date is valid, create a new event
+      if (nextRecurrenceDate && nextRecurrenceDate > now) {
+        // Ensure no duplicates by checking if the next date already exists
+        const existingChildEvent = await CalendarEventModel.findOne({
+          parentEventId: event._id,
+          start: nextRecurrenceDate,
+        });
 
-          console.log(`✅ Created event for ${event._id} on ${dateString}`);
-        } catch (error) {
-          console.error(
-            `❌ Failed to create event for ${event._id} on ${dateString}`,
-            error
+        if (!existingChildEvent) {
+          try {
+            // Create a new child event for the calculated recurrence date
+            await CalendarEventModel.create({
+              platform: event.platform,
+              start: nextRecurrenceDate,
+              end: nextRecurrenceDate, // Adjust in pre-hook if necessary
+              hoursEngaged: event.hoursEngaged,
+              status: "active", // Or inherit the parent status if needed
+              allDay: event.allDay,
+              timeZone: event.timeZone, // Same timezone as parent
+              isRecurring: false, // This is a child event, not recurring
+              parentEventId: event._id,
+              backgroundColor: event.backgroundColor,
+            });
+
+            console.log(
+              `✅ Created event for ${
+                event._id
+              } on ${nextRecurrenceDate.toISOString()}`
+            );
+          } catch (error) {
+            console.error(
+              `❌ Failed to create event for ${
+                event._id
+              } on ${nextRecurrenceDate.toISOString()}`,
+              error
+            );
+          }
+        } else {
+          console.log(
+            `⚠️ Event for ${
+              event._id
+            } already exists on ${nextRecurrenceDate.toISOString()}`
           );
         }
+      } else {
+        console.log(
+          `⚠️ Skipping generation for ${event._id}, no valid next recurrence date.`
+        );
       }
     }
 
