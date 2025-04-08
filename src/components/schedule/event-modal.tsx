@@ -19,7 +19,7 @@ import { CalendarEvent } from "@/store/states/calender";
 import { SelectMenu } from "../main/select-menu";
 import { useGetPlatformsQuery } from "@/store/services/platform.service";
 import { Platform } from "@/store/states/platforms";
-import { useUpdateEventMutation } from "@/store/services/calendar-event.service";
+
 import { toZonedTime } from "date-fns-tz";
 import { Switch } from "../ui/switch";
 
@@ -38,7 +38,6 @@ interface EventModalProps {
   readonly onDelete: (id: string) => void;
   readonly mode: "add" | "edit";
   readonly timeZone: string;
-  readonly refetch: () => void;
 }
 
 export function EventModal({
@@ -49,7 +48,6 @@ export function EventModal({
   onDelete,
   mode,
   timeZone,
-  refetch,
 }: EventModalProps) {
   const { data: platforms } = useGetPlatformsQuery();
   const [formData, setFormData] = useState<CalendarEvent>({
@@ -76,8 +74,6 @@ export function EventModal({
     const endDate = addMinutes(startDate, hoursEngaged * 60);
     return endDate.toISOString();
   };
-
-  const [updateEvent] = useUpdateEventMutation();
 
   useEffect(() => {
     if (event) {
@@ -138,16 +134,8 @@ export function EventModal({
     setFormData((prev) => ({
       ...prev,
       status: checked ? "completed" : "create",
-    }));
-
-    const response = await updateEvent({
-      id: formData.id,
-      status: "completed",
       backgroundColor: "#A0C878",
-    });
-    if (response.error) return;
-    refetch();
-    onClose();
+    }));
   };
 
   const handleHoursEngagedChange = (value: string) => {

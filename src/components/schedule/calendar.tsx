@@ -105,7 +105,8 @@ export default function Calendar() {
 
   // Handle form submission for adding/editing events
   const handleFormSubmit = async (eventData: CalendarEvent) => {
-    console.log(eventData);
+    console.log("eventData for editing", eventData);
+
     try {
       if (modalMode === "add") {
         await addEvent(eventData).unwrap();
@@ -230,7 +231,6 @@ export default function Calendar() {
           onDelete={handleDeleteEvent}
           mode={modalMode}
           timeZone={currentTimeZone}
-          refetch={refetch}
         />
       )}
       {isDeleteModalOpen && (
