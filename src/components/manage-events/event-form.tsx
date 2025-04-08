@@ -49,7 +49,7 @@ export function EventForm({ event, onSubmit, timeZone }: EventModalProps) {
     status: "create",
     timeZone: "UTC",
     isRecurring: false,
-    recurrencePattern: "weekly",
+    recurrencePattern: "Weekly",
   });
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
     null
@@ -83,7 +83,7 @@ export function EventForm({ event, onSubmit, timeZone }: EventModalProps) {
         timeZone: event.timeZone || "UTC",
         backgroundColor: event.backgroundColor ?? "#3788d8",
         isRecurring: event.isRecurring ?? false,
-        recurrencePattern: event.recurrencePattern ?? "weekly",
+        recurrencePattern: event.recurrencePattern ?? "Weekly",
       });
     }
   }, [event, timeZone]);
@@ -131,9 +131,11 @@ export function EventForm({ event, onSubmit, timeZone }: EventModalProps) {
       isRecurring: checked,
       recurrencePattern: checked
         ? (() => {
-            if (platform?.paymentType === "Weekly") return "weekly";
-            if (platform?.paymentType === "Bi-Weekly") return "bi-weekly";
-            return "weekly"; // Default fallback
+            if (platform?.paymentType === "Weekly") return "Weekly";
+            if (platform?.paymentType === "Bi-Weekly") return "Bi-Weekly";
+            if (platform?.paymentType === "Monthly") return "Monthly";
+            if (platform?.paymentType === "Upfront") return "Upfront";
+            return "Weekly"; // Default fallback
           })()
         : undefined,
     }));

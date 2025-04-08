@@ -167,6 +167,8 @@ export function EventModal({
         ? (() => {
             if (platform?.paymentType === "Weekly") return "Weekly";
             if (platform?.paymentType === "Bi-Weekly") return "Bi-Weekly";
+            if (platform?.paymentType === "Monthly") return "Monthly";
+            if (platform?.paymentType === "Upfront") return "Upfront";
             return "Weekly"; // Default fallback
           })()
         : undefined,
